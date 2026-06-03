@@ -1,11 +1,12 @@
-// DragDropSystem —— 统一拖拽系统
+// DragDropSystem —— 统一拖拽系统（Era 1-3 全覆盖）
 
 import * as Phaser from 'phaser';
 import { SoundCreature } from '../objects/SoundCreature';
 import { Resonator } from '../objects/Resonator';
 import { TargetZone } from '../objects/TargetZone';
+import { AlphabetTile } from '../objects/AlphabetTile';
 
-type RegisteredObject = SoundCreature | Resonator | TargetZone;
+type RegisteredObject = SoundCreature | Resonator | TargetZone | AlphabetTile;
 
 interface DragTarget {
   id: string;
@@ -27,7 +28,6 @@ export class DragDropSystem {
     this.setupInput();
   }
 
-  /** 注册一个可拖拽或可放置的对象 */
   register(object: RegisteredObject) {
     this.dragTargets.set(object.objectId, {
       id: object.objectId,
@@ -53,12 +53,7 @@ export class DragDropSystem {
 
     this.scene.input.on(
       'drag',
-      (
-        _pointer: Phaser.Input.Pointer,
-        gameObject: Phaser.GameObjects.GameObject,
-        dragX: number,
-        dragY: number
-      ) => {
+      (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject, dragX: number, dragY: number) => {
         if (this.isDragging && gameObject === this.dragObject) {
           (gameObject as Phaser.GameObjects.Container).x = dragX;
           (gameObject as Phaser.GameObjects.Container).y = dragY;
@@ -68,19 +63,14 @@ export class DragDropSystem {
 
     this.scene.input.on(
       'dragend',
-      (
-        _pointer: Phaser.Input.Pointer,
-        gameObject: Phaser.GameObjects.GameObject,
-      ) => {
+      (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
         if (gameObject !== this.dragObject) return;
 
         this.isDragging = false;
         this.dragObject?.setDragActive(false);
 
-        // 检测是否落在某个 resonator 或 target zone 上
-        const target = this.checkDropTargets(gameObject as SoundCreature);
-        if (!target && this.dragObject) {
-          // 返回原位
+        const dropped = this.checkDropTargets(gameObject as SoundCreature);
+        if (!dropped && this.dragObject) {
           this.scene.tweens.add({
             targets: this.dragObject,
             x: this.dragStartX,
@@ -94,12 +84,7 @@ export class DragDropSystem {
   }
 
   private checkDropTargets(dragged: SoundCreature): boolean {
-    const dragBounds = new Phaser.Geom.Rectangle(
-      dragged.x - 30,
-      dragged.y - 30,
-      60,
-      60
-    );
+    const dragBounds = new Phaser.Geom.Rectangle(dragged.x - 30, dragged.y - 30, 60, 60);
 
     for (const [, target] of this.dragTargets) {
       if (target.object === dragged) continue;
@@ -114,11 +99,10 @@ export class DragDropSystem {
       if (Phaser.Geom.Rectangle.Overlaps(dragBounds, targetBounds)) {
         if (target.object instanceof Resonator) {
           if (target.object.accepts(dragged.objectId)) {
-            const portPos = target.object.getPortPosition();
             this.scene.tweens.add({
               targets: dragged,
-              x: portPos.x,
-              y: portPos.y,
+              x: target.object.getPortPosition().x,
+              y: target.object.getPortPosition().y,
               duration: 200,
             });
             target.object.activate(dragged.phoneme);
@@ -136,6 +120,17 @@ export class DragDropSystem {
             target.object.highlight();
             return true;
           }
+        } else if (target.object instanceof AlphabetTile) {
+          if (target.object.accepts(dragged.objectId)) {
+            this.scene.tweens.add({
+              targets: dragged,
+              x: target.object.x,
+              y: target.object.y,
+              duration: 200,
+            });
+            target.object.reveal(dragged.phoneme);
+            return true;
+          }
         }
       }
     }
@@ -144,26 +139,26 @@ export class DragDropSystem {
   }
 
   areAllResonatorsActive(): boolean {
-    let total = 0;
-    let active = 0;
-    for (const [, target] of this.dragTargets) {
-      if (target.object instanceof Resonator) {
-        total++;
-        if (target.object.isActivated) active++;
-      }
+    let total = 0, active = 0;
+    for (const [, t] of this.dragTargets) {
+      if (t.object instanceof Resonator) { total++; if (t.object.isActivated) active++; }
     }
     return total > 0 && total === active;
   }
 
   areAllTargetsFilled(): boolean {
-    let total = 0;
-    let filled = 0;
-    for (const [, target] of this.dragTargets) {
-      if (target.object instanceof TargetZone) {
-        total++;
-        if (target.object.isFilled) filled++;
-      }
+    let total = 0, filled = 0;
+    for (const [, t] of this.dragTargets) {
+      if (t.object instanceof TargetZone) { total++; if (t.object.isFilled) filled++; }
     }
     return total > 0 && total === filled;
+  }
+
+  areAllTilesRevealed(): boolean {
+    let total = 0, revealed = 0;
+    for (const [, t] of this.dragTargets) {
+      if (t.object instanceof AlphabetTile) { total++; if (t.object.isRevealed) revealed++; }
+    }
+    return total > 0 && total === revealed;
   }
 }

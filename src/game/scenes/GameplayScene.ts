@@ -14,6 +14,7 @@ import { Resonator } from '../objects/Resonator';
 import { TargetZone } from '../objects/TargetZone';
 import { MouthShapeButton } from '../objects/MouthShapeButton';
 import { BlenderNode } from '../objects/BlenderNode';
+import { AlphabetTile } from '../objects/AlphabetTile';
 import { PhonemeLibrary } from '../audio/PhonemeLibrary';
 import { AudioManager } from '../audio/AudioManager';
 
@@ -25,7 +26,8 @@ export class GameplayScene extends Phaser.Scene {
   protected phonemeLibrary!: PhonemeLibrary;
   protected mouthShapeButtons: MouthShapeButton[] = [];
   protected blenderNodes: BlenderNode[] = [];
-  protected gameObjects: (SoundCreature | Resonator | TargetZone | MouthShapeButton | BlenderNode)[] = [];
+  protected alphabetTiles: AlphabetTile[] = [];
+  protected gameObjects: (SoundCreature | Resonator | TargetZone | MouthShapeButton | BlenderNode | AlphabetTile)[] = [];
 
   constructor(sceneKey: string = SCENES.GAMEPLAY) {
     super({ key: sceneKey });
@@ -41,6 +43,7 @@ export class GameplayScene extends Phaser.Scene {
 
     this.mouthShapeButtons = [];
     this.blenderNodes = [];
+    this.alphabetTiles = [];
     this.gameObjects = [];
 
     this.phonemeLibrary = new PhonemeLibrary();
@@ -96,7 +99,7 @@ export class GameplayScene extends Phaser.Scene {
         this.connectionSystem.registerBlender(obj);
       }
 
-      if (obj instanceof SoundCreature || obj instanceof Resonator || obj instanceof TargetZone) {
+      if (obj instanceof SoundCreature || obj instanceof Resonator || obj instanceof TargetZone || obj instanceof AlphabetTile) {
         this.dragDropSystem.register(obj);
       }
 
@@ -117,6 +120,10 @@ export class GameplayScene extends Phaser.Scene {
       case 'connect_and_blend':
       case 'multi_blend':
         return '点击声音节点的输出端口（小圆点）→ 再点击合成器的输入端口完成连线';
+      case 'invent_letter':
+        return '将音素水晶拖到空白石板上——揭开对应字母！';
+      case 'encoding_board':
+        return '将音素水晶拖到正确的编码槽位置';
       default:
         return '探索工作台上的装置吧！';
     }

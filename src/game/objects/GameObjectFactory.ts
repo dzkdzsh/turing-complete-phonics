@@ -5,8 +5,9 @@ import { Resonator } from './Resonator';
 import { TargetZone } from './TargetZone';
 import { MouthShapeButton } from './MouthShapeButton';
 import { BlenderNode } from './BlenderNode';
+import { AlphabetTile } from './AlphabetTile';
 
-export type GameObj = SoundCreature | Resonator | TargetZone | MouthShapeButton | BlenderNode;
+export type GameObj = SoundCreature | Resonator | TargetZone | MouthShapeButton | BlenderNode | AlphabetTile;
 
 export function createGameObject(scene: Phaser.Scene, def: GameObjectDef): GameObj | null {
   switch (def.type) {
@@ -15,8 +16,10 @@ export function createGameObject(scene: Phaser.Scene, def: GameObjectDef): GameO
     case 'resonator':
       return new Resonator(scene, def);
     case 'target_zone':
-    case 'encoding_slot':
       return new TargetZone(scene, def);
+    case 'encoding_slot':
+    case 'blank_tile':
+      return new AlphabetTile(scene, def);
     case 'mouth_shape':
       return new MouthShapeButton(scene, def);
     case 'blender':

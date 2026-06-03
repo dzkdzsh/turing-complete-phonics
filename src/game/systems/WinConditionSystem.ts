@@ -61,6 +61,9 @@ export class WinConditionSystem {
       case 'encoding_board_complete':
         won = this.dragDropSystem.areAllTargetsFilled();
         break;
+      case 'all_tiles_mapped':
+        won = this.dragDropSystem.areAllTilesRevealed();
+        break;
       case 'all_sounds_produced':
         won = this.areAllSoundsProduced(cond.requiredPhonemes || []);
         break;
