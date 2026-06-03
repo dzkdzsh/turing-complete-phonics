@@ -3,25 +3,22 @@
 import { useEffect, useRef } from 'react';
 import { createGameConfig } from '@/game/config';
 
+// 模块级标志：防止 Strict Mode 下的双重初始化
+let globalGameInstance: Phaser.Game | null = null;
+
 export default function PhaserGame() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<Phaser.Game | null>(null);
-  const initializedRef = useRef(false);
 
   useEffect(() => {
-    // Strict Mode 防护：避免 double-init
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
     if (!containerRef.current) return;
+    if (globalGameInstance) return;
 
     const config = createGameConfig(containerRef.current);
-    gameRef.current = new Phaser.Game(config);
+    globalGameInstance = new Phaser.Game(config);
 
     return () => {
-      gameRef.current?.destroy(true);
-      gameRef.current = null;
-      initializedRef.current = false;
+      globalGameInstance?.destroy(true);
+      globalGameInstance = null;
     };
   }, []);
 

@@ -3,6 +3,7 @@
 import * as Phaser from 'phaser';
 import type { GameObjectDef } from '@/types/level';
 import { PHONEME_COLORS } from '@/lib/constants';
+import { AudioManager } from '../audio/AudioManager';
 
 export class SoundCreature extends Phaser.GameObjects.Container {
   public objectId: string;
@@ -92,8 +93,7 @@ export class SoundCreature extends Phaser.GameObjects.Container {
       yoyo: true,
       duration: 100,
     });
-    // AudioManager 播放音素（后续阶段实现真实音频）
-    console.log(`[SoundCreature] Playing phoneme: /${this.phoneme}/`);
+    AudioManager.getInstance().playPhoneme(this.phoneme);
   }
 
   /** 拖拽时调用 */
