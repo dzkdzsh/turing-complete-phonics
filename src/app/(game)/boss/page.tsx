@@ -4,8 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { eventBus } from '@/game/event-bus';
-import { GameEvents } from '@/types/events';
+import { storeLevelConfig } from '@/game/level-config-store';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
@@ -30,13 +29,11 @@ export default function BossPage() {
   useEffect(() => {
     setLoading(true);
     loadLevelConfig(levelId).then((cfg) => {
+      if (cfg) {
+        storeLevelConfig(levelId, cfg);
+      }
       setConfig(cfg);
       setLoading(false);
-      if (cfg) {
-        setTimeout(() => {
-          eventBus.emit(GameEvents.START_LEVEL, { levelId, config: cfg });
-        }, 100);
-      }
     });
   }, [levelId]);
 

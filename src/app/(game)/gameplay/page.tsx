@@ -4,8 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { eventBus } from '@/game/event-bus';
-import { GameEvents } from '@/types/events';
+import { storeLevelConfig } from '@/game/level-config-store';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
@@ -41,19 +40,14 @@ export default function GameplayPage() {
 
   useEffect(() => {
     setLoading(true);
-
-    // Phase 1：异步加载关卡 JSON 配置
     loadLevelConfig(levelId).then((cfg) => {
+      if (cfg) {
+        // 先写入共享存储，再触发渲染。
+        // PreloadScene.create() 在 Phaser 启动时被调用，会从 store 中 consume 配置。
+        storeLevelConfig(levelId, cfg);
+      }
       setConfig(cfg);
       setLoading(false);
-
-      // Phase 2：延迟发射 —— 等 React 重新渲染 GameLayout（含 PhaserGame），
-      //           Phaser 初始化完成，PreloadScene 注册好 START_LEVEL 监听器
-      if (cfg) {
-        setTimeout(() => {
-          eventBus.emit(GameEvents.START_LEVEL, { levelId, config: cfg });
-        }, 100);
-      }
     });
   }, [levelId]);
 
