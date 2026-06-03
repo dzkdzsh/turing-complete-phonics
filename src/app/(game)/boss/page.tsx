@@ -1,12 +1,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { eventBus } from '@/game/event-bus';
 import { GameEvents } from '@/types/events';
-import { SCENES } from '@/lib/constants';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
@@ -18,7 +17,6 @@ async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
     configCache[levelId] = mod.default || mod;
     return configCache[levelId];
   } catch {
-    console.error(`无法加载Boss关卡配置: ${levelId}`);
     return null;
   }
 }
@@ -28,30 +26,19 @@ export default function BossPage() {
   const levelId = searchParams.get('level') || '005-boss-sounds';
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const sentRef = useRef(false);
 
   useEffect(() => {
     setLoading(true);
-    setConfig(null);
-    sentRef.current = false;
-    loadLevelConfig(levelId).then(setConfig).finally(() => setLoading(false));
-  }, [levelId]);
-
-  useEffect(() => {
-    if (!config || sentRef.current) return;
-
-    const onSceneReady = (payload: { sceneKey: string }) => {
-      if (payload.sceneKey === SCENES.PRELOAD) {
-        sentRef.current = true;
-        eventBus.emit(GameEvents.START_LEVEL, { levelId, config });
+    loadLevelConfig(levelId).then((cfg) => {
+      setConfig(cfg);
+      setLoading(false);
+      if (cfg) {
+        setTimeout(() => {
+          eventBus.emit(GameEvents.START_LEVEL, { levelId, config: cfg });
+        }, 100);
       }
-    };
-
-    eventBus.on(GameEvents.SCENE_READY, onSceneReady);
-    return () => {
-      eventBus.off(GameEvents.SCENE_READY, onSceneReady);
-    };
-  }, [config, levelId]);
+    });
+  }, [levelId]);
 
   if (loading || !config) {
     return (

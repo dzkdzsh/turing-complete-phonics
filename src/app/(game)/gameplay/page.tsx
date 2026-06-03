@@ -1,12 +1,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { eventBus } from '@/game/event-bus';
 import { GameEvents } from '@/types/events';
-import { SCENES } from '@/lib/constants';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
@@ -39,32 +38,24 @@ export default function GameplayPage() {
   const levelId = searchParams.get('level') || '001-discover-m';
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const sentRef = useRef(false);
 
-  // 第一阶段：加载关卡配置
   useEffect(() => {
     setLoading(true);
-    setConfig(null);
-    sentRef.current = false;
-    loadLevelConfig(levelId).then(setConfig).finally(() => setLoading(false));
-  }, [levelId]);
 
-  // 第二阶段：等 PreloadScene 就绪后发送关卡启动命令
-  useEffect(() => {
-    if (!config || sentRef.current) return;
+    // Phase 1：异步加载关卡 JSON 配置
+    loadLevelConfig(levelId).then((cfg) => {
+      setConfig(cfg);
+      setLoading(false);
 
-    const onSceneReady = (payload: { sceneKey: string }) => {
-      if (payload.sceneKey === SCENES.PRELOAD) {
-        sentRef.current = true;
-        eventBus.emit(GameEvents.START_LEVEL, { levelId, config });
+      // Phase 2：延迟发射 —— 等 React 重新渲染 GameLayout（含 PhaserGame），
+      //           Phaser 初始化完成，PreloadScene 注册好 START_LEVEL 监听器
+      if (cfg) {
+        setTimeout(() => {
+          eventBus.emit(GameEvents.START_LEVEL, { levelId, config: cfg });
+        }, 100);
       }
-    };
-
-    eventBus.on(GameEvents.SCENE_READY, onSceneReady);
-    return () => {
-      eventBus.off(GameEvents.SCENE_READY, onSceneReady);
-    };
-  }, [config, levelId]);
+    });
+  }, [levelId]);
 
   if (loading || !config) {
     return (
