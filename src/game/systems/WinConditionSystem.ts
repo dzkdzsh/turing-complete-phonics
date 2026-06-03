@@ -1,4 +1,4 @@
-// WinConditionSystem —— 胜利条件判定
+// WinConditionSystem —— 胜利条件判定（Era 1-3 全部支持）
 
 import * as Phaser from 'phaser';
 import type { LevelConfig } from '@/types/level';
@@ -13,6 +13,7 @@ export class WinConditionSystem {
   private levelConfig: LevelConfig;
   private dragDropSystem: DragDropSystem;
   private mouthShapeButtons: MouthShapeButton[];
+  private areBlendersReady: () => boolean;
   private startTime: number;
   private attemptCount = 0;
   private hasWon = false;
@@ -23,30 +24,29 @@ export class WinConditionSystem {
     scene: Phaser.Scene,
     levelConfig: LevelConfig,
     dragDropSystem: DragDropSystem,
-    mouthShapeButtons: MouthShapeButton[] = []
+    mouthShapeButtons: MouthShapeButton[] = [],
+    areBlendersReady: () => boolean = () => false
   ) {
     this.scene = scene;
     this.levelConfig = levelConfig;
     this.dragDropSystem = dragDropSystem;
     this.mouthShapeButtons = mouthShapeButtons;
+    this.areBlendersReady = areBlendersReady;
     this.startTime = Date.now();
   }
 
   update() {
     if (this.hasWon || this.hasFailed) return;
 
-    // 防抖：每 500ms 检查一次（除了实时检测不了的 sound_lab）
     const now = Date.now();
-    if (this.levelConfig.winCondition.type !== 'all_sounds_produced' && now - this.lastCheck < 500) {
-      return;
-    }
-    this.lastCheck = now;
-
     const cond = this.levelConfig.winCondition;
 
+    // sound_lab 需要实时检测，其他条件每 500ms 防抖
+    if (cond.type !== 'all_sounds_produced' && now - this.lastCheck < 500) return;
+    this.lastCheck = now;
+
     if (cond.timeLimitSec) {
-      const elapsed = (now - this.startTime) / 1000;
-      if (elapsed > cond.timeLimitSec) {
+      if ((now - this.startTime) / 1000 > cond.timeLimitSec) {
         this.onFail('timeout');
         return;
       }
@@ -64,13 +64,15 @@ export class WinConditionSystem {
       case 'all_sounds_produced':
         won = this.areAllSoundsProduced(cond.requiredPhonemes || []);
         break;
+      case 'target_blend_achieved':
+      case 'all_blenders_filled':
+        won = this.areBlendersReady();
+        break;
       default:
         break;
     }
 
-    if (won) {
-      this.onWin();
-    }
+    if (won) this.onWin();
   }
 
   private areAllSoundsProduced(required: string[]): boolean {
@@ -84,9 +86,7 @@ export class WinConditionSystem {
   recordAttempt() {
     this.attemptCount++;
     const max = this.levelConfig.winCondition.maxAttempts;
-    if (max && this.attemptCount >= max) {
-      this.onFail('too_many_attempts');
-    }
+    if (max && this.attemptCount >= max) this.onFail('too_many_attempts');
   }
 
   private onWin() {
@@ -110,9 +110,6 @@ export class WinConditionSystem {
 
   private onFail(reason: string) {
     this.hasFailed = true;
-    eventBus.emit(GameEvents.LEVEL_FAILED, {
-      levelId: this.levelConfig.levelId,
-      failReason: reason,
-    });
+    eventBus.emit(GameEvents.LEVEL_FAILED, { levelId: this.levelConfig.levelId, failReason: reason });
   }
 }

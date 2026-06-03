@@ -45,6 +45,21 @@ export class SoundCreature extends Phaser.GameObjects.Container {
     this.creatureLabel.setOrigin(0.5, -2.2);
     this.add(this.creatureLabel);
 
+    // 音素标识
+    const phonemeText = scene.add.text(0, 0, `/${this.phoneme}/`, {
+      fontSize: '13px',
+      color: '#c9a96e',
+      fontFamily: 'sans-serif',
+      fontStyle: 'bold',
+    });
+    phonemeText.setOrigin(0.5, 1.6);
+    this.add(phonemeText);
+
+    // 输出端口指示器（右侧小圆点，用于 Era 2 连线）
+    const outPort = scene.add.ellipse(30, 0, 10, 10, this.baseColor, 0.7);
+    outPort.setStrokeStyle(1, 0xffffff, 0.3);
+    this.add(outPort);
+
     // 交互
     this.setSize(60, 60);
     if (this.isDraggable) {
