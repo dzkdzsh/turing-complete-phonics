@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import AuthProvider from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
   title: '图灵拼读 — Turing Complete for Phonics',
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className="h-full antialiased">
-      <body className="h-full flex flex-col no-select">{children}</body>
+      <body className="h-full flex flex-col no-select">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
