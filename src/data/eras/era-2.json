@@ -1,0 +1,16 @@
+{
+  "eraNumber": 2,
+  "name": "声音机器",
+  "nameEn": "The Sound Machine",
+  "description": "你发现了一种奇怪的装置——合成器。它的核心晶体能将多个声音'焊接'在一起，形成全新的声音单元。这让你意识到：声音不是孤立的，它们像积木一样可以被组合。但组合的顺序很重要……",
+  "color": "#06B6D4",
+  "totalLevels": 10,
+  "bossLevelId": null,
+  "levels": [
+    "006-blend-ma",
+    "007-blend-sa",
+    "008-blend-kat"
+  ],
+  "coreMechanic": "connect_and_blend",
+  "unlockCondition": "完成 Era 1 Boss 关（005-boss-sounds）"
+}

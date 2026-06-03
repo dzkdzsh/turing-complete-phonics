@@ -1,0 +1,141 @@
+{
+  "levelId": "006-blend-ma",
+  "levelNumber": 6,
+  "era": 2,
+  "title": "合成 /ma/",
+  "titleEn": "Blend /ma/",
+  "subtitle": "把两个声音'焊接'在一起会发生什么？",
+  "learningGoal": "发现两个音素可以组合成新的声音单元——引入合成（blending）概念",
+  "learningGoalEn": "Discover that two phonemes can be combined into a new sound unit — introduce blending",
+  "unlocks": "声音合成（blending）机制",
+  "unlocksMechanic": "connect_and_blend",
+  "mechanicType": "connect_and_blend",
+  "inputType": "mouse",
+  "winCondition": {
+    "type": "target_blend_achieved",
+    "targets": [
+      { "inputPhonemes": ["m", "a"], "expectedOutput": "ma" }
+    ],
+    "maxAttempts": 20,
+    "timeLimitSec": 240
+  },
+  "difficulty": 2,
+  "estimatedDurationSec": 180,
+  "isBossLevel": false,
+  "requiresMic": false,
+  "gameScene": {
+    "background": "era2_workshop",
+    "ambientSound": "ambient_workshop"
+  },
+  "gameObjects": [
+    {
+      "id": "source_m",
+      "type": "sound_creature",
+      "position": { "x": 150, "y": 200 },
+      "draggable": false,
+      "phoneme": "m",
+      "spriteKey": "m_node",
+      "label": "/m/",
+      "onInteractAnimation": "pulse",
+      "onInteractSound": "m_phoneme",
+      "initialState": "active",
+      "ports": [
+        {
+          "id": "m_out",
+          "direction": "output",
+          "position": { "x": 60, "y": 0 },
+          "acceptedPhonemes": ["m"]
+        }
+      ]
+    },
+    {
+      "id": "source_a",
+      "type": "sound_creature",
+      "position": { "x": 150, "y": 400 },
+      "draggable": false,
+      "phoneme": "a",
+      "spriteKey": "a_node",
+      "label": "/a/",
+      "onInteractAnimation": "pulse",
+      "onInteractSound": "a_phoneme",
+      "initialState": "active",
+      "ports": [
+        {
+          "id": "a_out",
+          "direction": "output",
+          "position": { "x": 60, "y": 0 },
+          "acceptedPhonemes": ["a"]
+        }
+      ]
+    },
+    {
+      "id": "blender_ma",
+      "type": "blender",
+      "position": { "x": 600, "y": 300 },
+      "spriteKey": "blender",
+      "label": "声音合成器",
+      "labelEn": "Sound Blender",
+      "initialState": "active",
+      "ports": [
+        {
+          "id": "blend_in_1",
+          "direction": "input",
+          "position": { "x": -80, "y": -30 },
+          "acceptedPhonemes": ["m", "s"]
+        },
+        {
+          "id": "blend_in_2",
+          "direction": "input",
+          "position": { "x": -80, "y": 30 },
+          "acceptedPhonemes": ["a"]
+        },
+        {
+          "id": "blend_out",
+          "direction": "output",
+          "position": { "x": 80, "y": 0 }
+        }
+      ]
+    }
+  ],
+  "audioClips": [
+    { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
+    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" },
+    { "id": "ma_blend", "file": "blended/ma.wav", "type": "blend" }
+  ],
+  "hints": [
+    {
+      "hintIndex": 1,
+      "text": "看到左边有两个声音节点了吗？点击 /m/ 节点的输出端口，再点击合成器的第一个输入端口，用线把它们连接起来。",
+      "textEn": "See the two sound nodes on the left? Click the output port of /m/, then click the first input port of the blender to connect them.",
+      "highlightObjectIds": ["source_m", "blender_ma"],
+      "autoShowAfterSec": 30
+    },
+    {
+      "hintIndex": 2,
+      "text": "用同样的方法把 /a/ 也连到合成器。两个声音流进合成器，就会产生一个新的组合声音 /ma/！",
+      "textEn": "Connect /a/ to the blender the same way. Two sounds flowing in will produce a new combined sound /ma/!",
+      "highlightObjectIds": ["source_a", "blender_ma"],
+      "autoShowAfterSec": 70
+    }
+  ],
+  "failureModes": [
+    {
+      "description": "连线顺序错误（应该先 m 后 a）",
+      "descriptionEn": "Connected in wrong order",
+      "triggerCondition": "wrong_order",
+      "hintIndex": 2
+    },
+    {
+      "description": "未连接所有输入",
+      "descriptionEn": "Not all inputs connected",
+      "triggerCondition": "missing_connection",
+      "hintIndex": 1
+    }
+  ],
+  "introText": "在声音世界里，你发现了独立的声音碎片。但这座新发现的工坊里有一些奇怪的机器——一种叫'合成器'的设备。它有两个输入端口和一个输出端口。如果把两个声音节点连到合成器的输入端，会发生什么？试试看！",
+  "introTextEn": "In the Sound World, you discovered individual sound fragments. But this newly discovered workshop has strange machines — a device called a 'blender' with two inputs and one output. What happens if you connect two sound nodes to it? Try it!",
+  "victoryText": "合成器发出了一种新的声音——/ma/！两个独立的声音碎片被'焊接'在了一起，形成了一个新的声音单元。这意味着：声音不是孤立存在的，它们可以像积木一样组合！",
+  "victoryTextEn": "The blender produced a new sound — /ma/! Two independent sound fragments were 'welded' together into a new unit. This means: sounds don't exist in isolation — they can be combined like building blocks!",
+  "prerequisiteLevels": ["005-boss-sounds"],
+  "requiredStarsToUnlock": 0
+}

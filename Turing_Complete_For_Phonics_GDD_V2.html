@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turing Complete for Phonics - GDD V2</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1200px;margin:auto;padding:30px;line-height:1.7;background:#f5f7fb;color:#222}
+.section{background:#fff;padding:24px;border-radius:12px;margin:20px 0;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+h1,h2,h3{color:#1d4ed8}
+pre{background:#f3f4f6;padding:12px;border-radius:8px;overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:10px}
+th{background:#eef2ff}
+.highlight{background:#fef3c7;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+
+<h1>Turing Complete for Phonics</h1>
+<h2>Game Design Document (GDD) V2</h2>
+
+<div class="section">
+<h2>产品愿景</h2>
+<p>让孩子像发明计算机一样，重新发明英语阅读系统。</p>
+<pre>
+问题
+ ↓
+实验
+ ↓
+发现规律
+ ↓
+构建工具
+ ↓
+解决更复杂问题
+</pre>
+</div>
+
+<div class="section">
+<h2>世界观</h2>
+<p>失落语言文明（The Lost Language Civilization）</p>
+<p>远古文明掌握了“声音→文字→阅读”的技术，文明崩塌后只剩声音碎片。玩家作为 Language Engineer 学徒，负责重新构建整个系统。</p>
+</div>
+
+<div class="section">
+<h2>六大时代（Era）</h2>
+<table>
+<tr><th>Era</th><th>主题</th><th>认知目标</th></tr>
+<tr><td>1</td><td>The Sound World</td><td>发现声音</td></tr>
+<tr><td>2</td><td>The Sound Machine</td><td>发现声音可组合</td></tr>
+<tr><td>3</td><td>The Alphabet Revolution</td><td>发明字母</td></tr>
+<tr><td>4</td><td>The Reading Engine</td><td>构建拼读机</td></tr>
+<tr><td>5</td><td>The Exception Labs</td><td>发现特殊规则</td></tr>
+<tr><td>6</td><td>The Language Architect</td><td>成为语言工程师</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>100关结构</h2>
+<pre>
+Era 1  声音世界           15关
+Era 2  声音机器           15关
+Era 3  字母革命           20关
+Era 4  阅读引擎           20关
+Era 5  异常实验室         20关
+Era 6  语言架构师         10关
+
+总计：100关
+</pre>
+</div>
+
+<div class="section">
+<h2>Era 1：声音世界</h2>
+<p>目标：发现声音是独立对象。</p>
+<pre>
+Level 1 识别 /m/
+Level 2 识别 /s/
+Level 3 识别 /a/
+...
+Level 15 混合识别10种音素
+</pre>
+</div>
+
+<div class="section">
+<h2>Era 2：声音机器</h2>
+<pre>
+Level 16 m + a
+Level 17 s + a
+Level 18 m + a + t
+...
+Level 30 五音素组合
+</pre>
+<p>核心顿悟：单词是声音序列。</p>
+</div>
+
+<div class="section">
+<h2>Era 3：字母革命</h2>
+<pre>
+/m/ → m
+/s/ → s
+/k/ → c
+</pre>
+<p>核心顿悟：字母是声音编码工具。</p>
+</div>
+
+<div class="section">
+<h2>Era 4：阅读引擎</h2>
+<pre>
+cat
+dog
+pig
+...
+短句阅读
+</pre>
+<p>核心顿悟：构建拼读机。</p>
+</div>
+
+<div class="section">
+<h2>Era 5：异常实验室</h2>
+<pre>
+sh
+ch
+th
+ph
+ee
+ea
+ai
+igh
+magic e
+</pre>
+<p>核心顿悟：英语规则存在历史遗留例外。</p>
+</div>
+
+<div class="section">
+<h2>Era 6：语言架构师</h2>
+<pre>
+根据发音设计拼写
+给怪物命名
+阅读完整故事
+</pre>
+<p>核心顿悟：拼写是声音编码系统。</p>
+</div>
+
+<div class="section">
+<h2>麦克风验证策略</h2>
+<table>
+<tr><th>类型</th><th>占比</th></tr>
+<tr><td>普通关卡（点击、拖拽）</td><td>80%</td></tr>
+<tr><td>Boss关（发音验证）</td><td>20%</td></tr>
+</table>
+
+<pre>
+Level 5
+Level 10
+Level 15
+...
+Boss关使用麦克风
+</pre>
+</div>
+
+<div class="section">
+<h2>防猜答案设计</h2>
+<pre>
+给出：
+/k/ /æ/ /t/
+
+要求：
+搭建 cat
+</pre>
+
+<p>通过构造任务代替选择题，避免蒙答案。</p>
+</div>
+
+<div class="section">
+<h2>统一知识体系</h2>
+<table>
+<tr><th>概念</th><th>统一解释</th></tr>
+<tr><td>Phonics</td><td>一个声音对应一个符号</td></tr>
+<tr><td>Blending</td><td>多个声音组合</td></tr>
+<tr><td>Digraph</td><td>两个符号对应一个声音</td></tr>
+<tr><td>Sight Words</td><td>历史遗留异常编码</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>MVP（2个月）</h2>
+<pre>
+Era1
+Era2
+Era3前半
+
+约30关
+</pre>
+
+<p>功能：</p>
+<pre>
+登录
+存档
+关卡系统
+声音播放
+麦克风验证
+科技树
+</pre>
+</div>
+
+<div class="section">
+<h2>正式版（1年）</h2>
+<pre>
+100关
+完整世界地图
+发音评分
+AI导师
+关卡编辑器
+教师模式
+家长后台
+</pre>
+</div>
+
+<div class="section">
+<div class="highlight">
+一句话定位：
+
+“玩家不是在学英语，而是在重建一个把声音编码成文字的文明。”
+</div>
+</div>
+
+</body>
+</html>

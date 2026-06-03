@@ -1,0 +1,15 @@
+{
+  "eraNumber": 3,
+  "name": "字母革命",
+  "nameEn": "The Alphabet Revolution",
+  "description": "掌握了声音的捕捉与合成之后，你面临一个新问题：如何记录这些声音？文字大厅里的远古石板似乎知道答案——它们能将声音'刻'成可见的符号。这些符号就是字母——人类最伟大的发明之一。",
+  "color": "#8B5CF6",
+  "totalLevels": 20,
+  "bossLevelId": null,
+  "levels": [
+    "009-invent-m",
+    "010-encoding-board"
+  ],
+  "coreMechanic": "invent_letter",
+  "unlockCondition": "完成 Era 2 关卡 008-blend-kat"
+}

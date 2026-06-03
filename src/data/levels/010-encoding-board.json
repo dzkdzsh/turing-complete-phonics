@@ -1,0 +1,144 @@
+{
+  "levelId": "010-encoding-board",
+  "levelNumber": 10,
+  "era": 3,
+  "title": "建造编码板",
+  "titleEn": "Build the Encoding Board",
+  "subtitle": "用有限的符号编码无限的声音",
+  "learningGoal": "建立最早的声音→字母映射表——理解字母表是音素的编码系统",
+  "learningGoalEn": "Build the first sound→letter mapping table — understand that an alphabet is a phoneme encoding system",
+  "unlocks": "字母编码表概念",
+  "unlocksMechanic": "encoding_board",
+  "mechanicType": "encoding_board",
+  "inputType": "mouse",
+  "winCondition": {
+    "type": "encoding_board_complete",
+    "maxAttempts": 15,
+    "timeLimitSec": 300
+  },
+  "difficulty": 3,
+  "estimatedDurationSec": 210,
+  "isBossLevel": false,
+  "requiresMic": false,
+  "gameScene": {
+    "background": "era3_encoding_lab",
+    "ambientSound": "ambient_scribing"
+  },
+  "gameObjects": [
+    {
+      "id": "phoneme_m",
+      "type": "sound_creature",
+      "position": { "x": 100, "y": 200 },
+      "draggable": true,
+      "phoneme": "m",
+      "spriteKey": "m_crystal_small",
+      "label": "/m/",
+      "onInteractAnimation": "pulse",
+      "onInteractSound": "m_phoneme",
+      "initialState": "active"
+    },
+    {
+      "id": "phoneme_s",
+      "type": "sound_creature",
+      "position": { "x": 100, "y": 320 },
+      "draggable": true,
+      "phoneme": "s",
+      "spriteKey": "s_crystal_small",
+      "label": "/s/",
+      "onInteractAnimation": "pulse",
+      "onInteractSound": "s_phoneme",
+      "initialState": "active"
+    },
+    {
+      "id": "phoneme_a",
+      "type": "sound_creature",
+      "position": { "x": 100, "y": 440 },
+      "draggable": true,
+      "phoneme": "a",
+      "spriteKey": "a_crystal_small",
+      "label": "/a/",
+      "onInteractAnimation": "pulse",
+      "onInteractSound": "a_phoneme",
+      "initialState": "active"
+    },
+    {
+      "id": "slot_m",
+      "type": "encoding_slot",
+      "position": { "x": 500, "y": 200 },
+      "droppable": true,
+      "accepts": ["phoneme_m"],
+      "spriteKey": "encoding_slot",
+      "label": "编码槽 1",
+      "labelEn": "Encoding Slot 1",
+      "initialState": "active",
+      "letterSymbol": "m"
+    },
+    {
+      "id": "slot_s",
+      "type": "encoding_slot",
+      "position": { "x": 500, "y": 320 },
+      "droppable": true,
+      "accepts": ["phoneme_s"],
+      "spriteKey": "encoding_slot",
+      "label": "编码槽 2",
+      "labelEn": "Encoding Slot 2",
+      "initialState": "active",
+      "letterSymbol": "s"
+    },
+    {
+      "id": "slot_a",
+      "type": "encoding_slot",
+      "position": { "x": 500, "y": 440 },
+      "droppable": true,
+      "accepts": ["phoneme_a"],
+      "spriteKey": "encoding_slot",
+      "label": "编码槽 3",
+      "labelEn": "Encoding Slot 3",
+      "initialState": "active",
+      "letterSymbol": "a"
+    },
+    {
+      "id": "verify_button",
+      "type": "target_zone",
+      "position": { "x": 750, "y": 320 },
+      "spriteKey": "verify_button",
+      "label": "验证编码板",
+      "labelEn": "Verify Encoding Board",
+      "initialState": "active"
+    }
+  ],
+  "audioClips": [
+    { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
+    { "id": "s_phoneme", "file": "phonemes/s.wav", "type": "phoneme", "phoneme": "s" },
+    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" }
+  ],
+  "hints": [
+    {
+      "hintIndex": 1,
+      "text": "编码板上有三个空槽。每个空槽都'知道'它对应哪个声音。把左边的音素水晶拖到正确的编码槽里——/m/ 放哪格？/s/ 放哪格？/a/ 放哪格？",
+      "textEn": "The encoding board has three slots. Each slot 'knows' which sound it corresponds to. Drag the crystals to the right slots — where does /m/ go? /s/? /a/?",
+      "highlightObjectIds": ["slot_m", "slot_s", "slot_a"],
+      "autoShowAfterSec": 30
+    },
+    {
+      "hintIndex": 2,
+      "text": "还记得你在之前关卡中学到的东西吗？双唇振动是 /m/，气流摩擦是 /s/，张大嘴巴是 /a/。用这些特征来匹配正确的槽位吧！放好后点击验证按钮。",
+      "textEn": "Remember what you learned? Lip vibration = /m/, air friction = /s/, open mouth = /a/. Use these to match the right slots, then click verify!",
+      "autoShowAfterSec": 80
+    }
+  ],
+  "failureModes": [
+    {
+      "description": "音素放入了错误的编码槽",
+      "descriptionEn": "Phoneme placed in wrong encoding slot",
+      "triggerCondition": "wrong_match",
+      "hintIndex": 2
+    }
+  ],
+  "introText": "你已经发明了第一个字母 m。现在，编码实验室里有一台更强大的设备——'编码板'。它能同时处理多个声音→符号映射。把左边三颗音素水晶分别拖到正确的位置，完成第一张完整的'声音编码表'！完成后点击验证按钮看看是否全部正确。",
+  "introTextEn": "You invented the first letter 'm'. Now the Encoding Lab has a more powerful device — the 'Encoding Board.' It maps multiple sounds to symbols at once. Drag each phoneme crystal to its correct slot and build the first complete sound encoding table! Click verify when done.",
+  "victoryText": "编码板闪烁出金色的光芒！三组映射全部正确：/m/↔m, /s/↔s, /a/↔a。你建造了人类历史上第一张字母编码表。三个字母——m, s, a——但这只是开始。用有限的符号编码无限的声音——这就是文字的力量！Era 3 前半完成。",
+  "victoryTextEn": "The encoding board glows golden! All three mappings correct: /m/↔m, /s/↔s, /a/↔a. You built the first alphabet encoding table in history. Three letters — m, s, a — but this is just the beginning. Encode infinite sounds with finite symbols — this is the power of writing! Era 3 first half complete.",
+  "prerequisiteLevels": ["009-invent-m"],
+  "requiredStarsToUnlock": 0
+}
