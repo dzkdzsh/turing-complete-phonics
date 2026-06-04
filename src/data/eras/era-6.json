@@ -1,0 +1,11 @@
+{
+  "eraNumber": 6,
+  "name": "句子工坊",
+  "nameEn": "Sentence Workshop",
+  "description": "单词只是砖块，句子才是建筑。把学过的单词排成正确的顺序，你就建造了第一座语言之屋。",
+  "color": "#14b8a6",
+  "totalLevels": 3,
+  "levels": ["020-sentence-simple","021-sentence-quest","022-sentence-story"],
+  "coreMechanic": "sentence_build",
+  "unlockCondition": "完成 Era 5（019-memory-boss）"
+}

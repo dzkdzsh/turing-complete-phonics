@@ -2,121 +2,134 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
 export default function ThreeBg() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
-
     const w = containerRef.current.clientWidth;
     const h = containerRef.current.clientHeight;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#87CEEB');
-    scene.fog = new THREE.Fog('#87CEEB', 5, 25);
+    scene.background = new THREE.Color('#0f0d0a');
+    scene.fog = new THREE.FogExp2('#0f0d0a', 0.0008);
 
-    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 50);
-    camera.position.z = 8;
+    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 60);
+    camera.position.set(0, 2, 14);
+    camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
     renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = '0';
-    renderer.domElement.style.left = '0';
+    renderer.domElement.style.top = '0'; renderer.domElement.style.left = '0';
 
-    scene.add(new THREE.AmbientLight(0xFF8C42, 0.4));
+    // Warm ambient + point light
+    scene.add(new THREE.AmbientLight(0xd4912a, 0.3));
+    const pointLight = new THREE.PointLight(0xd4912a, 1.5, 30);
+    pointLight.position.set(0, 3, 5);
+    scene.add(pointLight);
 
-    const letters: THREE.Mesh[] = [];
-    const createLetter = (char: string) => {
+    // --- Floating stone tablets with letters ---
+    const tablets: THREE.Group[] = [];
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+    const createTablet = (letter: string) => {
+      const group = new THREE.Group();
+
+      // Stone slab
+      const slabGeo = new THREE.BoxGeometry(1.8, 2.2, 0.2);
+      const slabMat = new THREE.MeshStandardMaterial({ color: 0x3d3528, roughness: 0.8, metalness: 0.1 });
+      const slab = new THREE.Mesh(slabGeo, slabMat);
+      slab.castShadow = true;
+      group.add(slab);
+
+      // Gold letter on front
       const canvas = document.createElement('canvas');
-      canvas.width = 64; canvas.height = 64;
+      canvas.width = 128; canvas.height = 128;
       const ctx = canvas.getContext('2d')!;
       ctx.fillStyle = '#d4912a';
-      ctx.font = 'bold 48px Crimson Text, serif';
+      ctx.font = 'bold 72px Crimson Text, Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(char, 32, 32);
+      ctx.fillText(letter, 64, 64);
 
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.minFilter = THREE.LinearFilter;
-      const mat = new THREE.MeshBasicMaterial({
-        map: texture, transparent: true, opacity: 0.25,
-        depthWrite: false,
-      });
-      const geo = new THREE.PlaneGeometry(1.2, 1.2);
-      const mesh = new THREE.Mesh(geo, mat);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.minFilter = THREE.LinearFilter;
+      const letterMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+      const letterPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), letterMat);
+      letterPlane.position.z = 0.12;
+      group.add(letterPlane);
 
-      // Random position
-      mesh.position.set(
-        (Math.random() - 0.5) * 16,
-        (Math.random() - 0.5) * 10,
-        Math.random() * 6 - 3
-      );
-      mesh.rotation.z = (Math.random() - 0.5) * 0.5;
-      mesh.userData = {
-        speedX: (Math.random() - 0.5) * 0.003,
-        speedY: (Math.random() - 0.5) * 0.002,
-        speedZ: (Math.random() - 0.5) * 0.004,
+      // Random position in a wide ring
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 6 + Math.random() * 8;
+      group.position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 6, Math.sin(angle) * radius - 2);
+      group.rotation.y = angle + Math.PI / 2;
+      group.rotation.x = (Math.random() - 0.5) * 0.3;
+      group.rotation.z = (Math.random() - 0.5) * 0.2;
+
+      group.userData = {
         rotSpeed: (Math.random() - 0.5) * 0.003,
+        floatSpeed: 0.3 + Math.random() * 0.5,
+        floatAmp: 0.3 + Math.random() * 0.8,
+        baseY: group.position.y,
       };
 
-      scene.add(mesh);
-      return mesh;
+      scene.add(group);
+      return group;
     };
 
-    // Create 20 floating letters
-    for (let i = 0; i < 20; i++) {
-      const char = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-      letters.push(createLetter(char));
+    for (let i = 0; i < 16; i++) {
+      tablets.push(createTablet(letters[Math.floor(Math.random() * letters.length)]));
     }
 
-    // Small floating dots
-    const dotsGeo = new THREE.BufferGeometry();
-    const dotsCount = 80;
-    const positions = new Float32Array(dotsCount * 3);
-    for (let i = 0; i < dotsCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
+    // --- Floating golden particles ---
+    const particlesGeo = new THREE.BufferGeometry();
+    const count = 200;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 24;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
-      positions[i * 3 + 2] = Math.random() * 8 - 4;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      const gold = Math.random() > 0.5 ? 1 : 0.7;
+      colors[i * 3] = gold;
+      colors[i * 3 + 1] = gold * 0.66;
+      colors[i * 3 + 2] = gold * 0.16;
     }
-    dotsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const dotsMat = new THREE.PointsMaterial({
-      color: 0xFF8C42, size: 0.04, transparent: true, opacity: 0.5,
-      depthWrite: false,
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const particlesMat = new THREE.PointsMaterial({
+      size: 0.06, vertexColors: true, transparent: true, opacity: 0.6, depthWrite: false,
     });
-    const dots = new THREE.Points(dotsGeo, dotsMat);
-    scene.add(dots);
+    const particles = new THREE.Points(particlesGeo, particlesMat);
+    scene.add(particles);
 
-    // Animation loop
+    // Animation
     let animId: number;
+    const clock = new THREE.Clock();
     const animate = () => {
       animId = requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      letters.forEach(m => {
-        m.position.x += m.userData.speedX;
-        m.position.y += m.userData.speedY;
-        m.position.z += m.userData.speedZ;
-        m.rotation.z += m.userData.rotSpeed;
-
-        // Wrap around
-        if (Math.abs(m.position.x) > 9) m.position.x *= -1;
-        if (Math.abs(m.position.y) > 6) m.position.y *= -1;
-        if (m.position.z > 5) m.position.z = -5;
-        if (m.position.z < -5) m.position.z = 5;
+      tablets.forEach(m => {
+        m.position.y = m.userData.baseY + Math.sin(t * m.userData.floatSpeed) * m.userData.floatAmp;
+        m.rotation.y += m.userData.rotSpeed;
       });
 
-      dots.rotation.y += 0.0003;
-      dots.rotation.x += 0.0001;
+      particles.rotation.y += 0.0002;
+      particles.rotation.x += 0.0001;
+
+      // Camera subtle drift
+      camera.position.x = Math.sin(t * 0.15) * 1.5;
+      camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // Resize handler
     const onResize = () => {
       if (!containerRef.current) return;
       const nw = containerRef.current.clientWidth;
@@ -135,5 +148,5 @@ export default function ThreeBg() {
     };
   }, []);
 
-  return <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 0 }} />;
+  return <div ref={containerRef} className="absolute inset-0" />;
 }

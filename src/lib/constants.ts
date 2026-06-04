@@ -36,6 +36,13 @@ export const ERAS = {
     color: '#f97316',
     totalLevels: 4,
   },
+  6: {
+    name: '句子工坊',
+    nameEn: 'Sentence Workshop',
+    description: '单词到句子——真正的阅读起点',
+    color: '#14b8a6',
+    totalLevels: 3,
+  },
 } as const;
 
 // 音素对应颜色

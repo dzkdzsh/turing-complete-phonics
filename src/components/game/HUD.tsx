@@ -6,7 +6,7 @@ import LevelStartModal from './LevelStartModal'; import VictoryModal from './Vic
 
 interface HUDProps { levelId: string; isBoss?: boolean; title?: string; introText?: string; victoryText?: string; mechanicHint?: string; onExit?: () => void; }
 
-const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'invent-m','invent-m':'encoding-board'};
+const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'invent-m','invent-m':'encoding-board','encoding-board':'spell-cvc','spell-cvc':'spell-cvcc','spell-cvcc':'spell-digraph','spell-digraph':'spell-long','spell-long':'spell-boss','spell-boss':'memory-cvc','memory-cvc':'memory-blend','memory-blend':'memory-sight','memory-sight':'memory-boss','memory-boss':'sentence-simple'};
 
 export default function HUD({ levelId, isBoss=false, title='', introText='', victoryText='', mechanicHint='', onExit }: HUDProps) {
   const router = useRouter(); const { completeLevel, unlockLevel, setScreen } = useGameStore();

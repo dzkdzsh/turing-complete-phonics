@@ -2,35 +2,45 @@
 import { useRouter } from 'next/navigation'; import { useGameStore } from '@/lib/game-state';
 import { useEffect, useState } from 'react';
 
+const STEPS = ['声音 Sound','音素 Phoneme','字母 Glyph','拼读 Blend','规则 Rule','阅读 Read'];
+
 export default function Home() {
   const r = useRouter(); const { setScreen } = useGameStore(); const [v, setV] = useState(false);
   useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
 
   return (
-    <div className="flex items-center justify-center h-full sky-bg relative overflow-hidden">
-      {/* Cartoon clouds */}
-      <div className="absolute top-12 left-[15%] w-24 h-14 bg-white rounded-full opacity-90 floaty shadow-lg" style={{animationDelay:'0s'}} />
-      <div className="absolute top-8 left-[15%] w-16 h-10 bg-white rounded-full opacity-90" style={{marginLeft:30,marginTop:-10}} />
-      <div className="absolute top-8 left-[15%] w-14 h-9 bg-white rounded-full opacity-90" style={{marginLeft:-20,marginTop:-5}} />
-      <div className="absolute top-24 right-[20%] w-20 h-12 bg-white rounded-full opacity-85 floaty shadow-lg" style={{animationDelay:'1.5s'}} />
-      <div className="absolute top-20 right-[20%] w-14 h-9 bg-white rounded-full opacity-85" style={{marginLeft:25,marginTop:-8}} />
-      {/* Green hills */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 rounded-t-[50%] opacity-80" style={{background:'#7EC850',width:'120%',left:'-10%'}} />
-      <div className="absolute bottom-0 left-0 right-0 h-28 rounded-t-[50%] opacity-60" style={{background:'#5DA83A',width:'110%',left:'-5%'}} />
+    <div className="flex items-center justify-center h-full paper-texture" style={{ background: 'linear-gradient(165deg, #fdf8f0 0%, #f5ede0 40%, #efe5d2 100%)' }}>
+      <div className={`text-center px-6 transition-all duration-800 ${v ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        style={{ transitionDuration: '800ms', transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)' }}>
 
-      <div className={`relative z-10 text-center px-6 transition-all duration-700 ${v ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 shadow-lg mb-8">
-          <span className="text-2xl">🔤</span>
-          <span className="text-sm font-bold text-[#3D2C2C]">Language Adventure</span>
+        {/* Brand mark */}
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/70 border border-[#2c2416]/[0.04] shadow-sm mb-10">
+          <div className="w-2 h-2 rounded-full bg-[#d4912a] pulse-ring" />
+          <span className="text-[10px] font-semibold text-[#5c4f3a] tracking-[0.15em] uppercase">Language Reconstruction Project</span>
         </div>
-        <h1 className="font-display text-7xl font-extrabold text-[#3D2C2C] mb-2 drop-shadow-sm">图灵拼读</h1>
-        <p className="text-xl text-[#FF8C42] font-bold mb-10 drop-shadow-sm">Turing Complete for Phonics</p>
-        <p className="text-[#6B5B4F] text-base max-w-md mx-auto leading-relaxed mb-10 bg-white/60 backdrop-blur rounded-2xl py-4 px-6 shadow-sm">
-          从声音碎片开始，<span className="font-extrabold text-[#FF6B9D]">搭建</span>你的英语拼读系统！🔊
+
+        <h1 className="font-display text-7xl font-bold text-[#2c2416] mb-3 tracking-tight">图灵拼读</h1>
+        <p className="text-base text-[#d4912a] font-semibold tracking-[0.3em] uppercase mb-12">Turing Complete for Phonics</p>
+
+        <p className="text-[#5c4f3a]/80 text-sm max-w-md mx-auto leading-relaxed mb-12">
+          从最基础的<span className="font-semibold text-[#2c2416]">音素元件</span>开始，
+          一步步<span className="font-semibold text-[#2c2416]">重建整个英语发音系统</span>。
+          如同考古学家在废墟中复原失落的语言文明。
         </p>
-        <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="btn-toon text-lg px-10 py-4 wiggle">
-          🚀 开始冒险
-        </button>
+
+        <div className="flex gap-4 justify-center mb-16">
+          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="btn-primary">开始探索</button>
+        </div>
+
+        {/* Progress chain */}
+        <div className="flex items-center gap-2 justify-center flex-wrap">
+          {STEPS.map((s,i) => (
+            <span key={s} className="flex items-center gap-2">
+              <span className="text-[11px] text-[#9b8c78] font-medium tracking-wide">{s}</span>
+              {i < 5 && <svg width="10" height="10" viewBox="0 0 10 10" className="text-[#d4c9b6]"><path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
