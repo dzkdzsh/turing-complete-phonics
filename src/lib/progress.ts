@@ -25,28 +25,8 @@ export async function saveProgress(
 }
 
 export async function loadProgress() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from('user_progress')
-    .select('*')
-    .eq('user_id', user.id);
-
-  if (!data) return null;
-
-  const completedLevels: string[] = [];
-  const levelStars: Record<string, number> = {};
-
-  for (const row of data) {
-    if (row.completed) {
-      completedLevels.push(row.level_id);
-      levelStars[row.level_id] = row.stars || 0;
-    }
-  }
-
-  return { completedLevels, levelStars };
+  // DEV BYPASS — return empty progress (local only)
+  return { completedLevels: [], levelStars: {} };
 }
 
 // 关卡快照读写

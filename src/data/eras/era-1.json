@@ -4,11 +4,12 @@
   "nameEn": "The Sound World",
   "description": "在这个失落文明的废墟中，你首先注意到一些会发声的生物。它们看起来不像动物，更像是纯粹的声音凝结体。你的任务：捕获和分析这些声音碎片，理解声音本身就是一种独立的存在。",
   "color": "#F59E0B",
-  "totalLevels": 10,
+  "totalLevels": 8,
   "bossLevelId": "005-boss-sounds",
   "levels": [
     "001-discover-m",
     "002-discover-s",
+    "001b-discover-n",
     "003-sound-match",
     "004-sound-lab",
     "005-boss-sounds"

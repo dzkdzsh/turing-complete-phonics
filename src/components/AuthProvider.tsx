@@ -6,8 +6,8 @@ import { useGameStore } from '@/lib/game-state';
 import { getCurrentUser, getUserProfile } from '@/lib/auth';
 import { loadProgress } from '@/lib/progress';
 
-// 不需要登录即可访问的路由
-const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/register'];
+// DEV: 所有路由公开（Supabase 未配置）
+const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/register', '/era-select', '/level-select', '/gameplay', '/boss', '/victory'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -59,7 +59,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
 
       // 如果已登录但访问公开路由，跳转时代地图
-      if (isPublic) {
+      // DEV: 只在首页和认证页时才跳转
+      if (pathname === '/' || pathname.startsWith('/auth')) {
         router.replace('/era-select');
       }
     };
@@ -74,9 +75,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 function buildUnlockedList(completed: string[]): string[] {
   const allUnlocked = ['001-discover-m'];
   const chain = [
-    '001-discover-m', '002-discover-s', '003-sound-match',
+    '001-discover-m', '002-discover-s', '001b-discover-n', '003-sound-match',
     '004-sound-lab', '005-boss-sounds', '006-blend-ma',
-    '007-blend-sa', '008-blend-kat', '009-invent-m',
+    '007-blend-sa', '008-blend-kat', '006a-blend-sh', '009-invent-m',
     '010-encoding-board',
   ];
   for (let i = 0; i < chain.length - 1; i++) {

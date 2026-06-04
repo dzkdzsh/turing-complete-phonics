@@ -84,21 +84,25 @@ export class Resonator extends Phaser.GameObjects.Container {
 
   /** Era 1：矩形共振器 */
   private buildResonator(scene: Phaser.Scene, def: GameObjectDef) {
-    this.resonatorBody = scene.add.rectangle(0, 0, 100, 80, 0x333333, 0.6);
-    this.resonatorBody.setStrokeStyle(2, 0xc9a96e, 0.5);
+    // Glow behind
+    const glow = scene.add.ellipse(0, 0, 110, 90, 0xc9a96e, 0.08);
+    this.add(glow);
+    scene.tweens.add({ targets: glow, alpha: 0.15, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    this.resonatorBody = scene.add.rectangle(0, 0, 100, 80, 0xffffff, 0.9);
+    this.resonatorBody.setStrokeStyle(2, 0x6366f1, 0.4);
     this.add(this.resonatorBody);
 
-    this.core = scene.add.ellipse(0, 0, 30, 30, 0x666666, 0.5);
+    this.core = scene.add.ellipse(0, 0, 30, 30, 0x6366f1, 0.1);
+    this.core.setStrokeStyle(1, 0x6366f1, 0.4);
     this.add(this.core);
 
-    this.portIndicator = scene.add.ellipse(-50, 0, 12, 12, 0xc9a96e, 0.6);
+    this.portIndicator = scene.add.ellipse(-50, 0, 10, 10, 0x6366f1, 0.5);
+    scene.tweens.add({ targets: this.portIndicator, alpha: 0.3, duration: 1000, yoyo: true, repeat: -1 });
     this.add(this.portIndicator);
 
     this.lab = scene.add.text(0, 55, def.label || '共振器', {
-      fontSize: '12px',
-      color: '#8b7355',
-      fontFamily: 'sans-serif',
-      align: 'center',
+      fontSize: '11px', color: '#6b5e53', fontFamily: 'sans-serif',
     });
     this.lab.setOrigin(0.5, 0);
     this.add(this.lab);

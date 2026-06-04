@@ -26,12 +26,15 @@ export const ERAS = {
 
 // 音素对应颜色
 export const PHONEME_COLORS: Record<string, number> = {
-  m: 0xF59E0B,   // 暖橙
-  s: 0x06B6D4,   // 冷青
-  a: 0x10B981,   // 柔绿
-  k: 0xD97706,   // 琥珀
-  ae: 0xEC4899,  // 粉
-  t: 0x8B5CF6,   // 紫
+  m: 0xF59E0B, n: 0xF59E0B,   // 鼻音 - 暖橙
+  s: 0x06B6D4,                 // 擦音 - 冷青
+  a: 0x10B981,                 // 元音 - 柔绿
+  k: 0xD97706, t: 0xD97706, p: 0xD97706,  // 塞音 - 琥珀
+  ae: 0xEC4899,                // 次开元音 - 粉
+  f: 0x8B5CF6,                 // 擦音 - 紫
+  g: 0x06B6D4,                 // 塞音 - 青
+  h: 0xEC4899,                 // 声门擦音
+  sh: 0xF59E0B, ch: 0x06B6D4, th: 0x8B5CF6,  // 双字母组合
 };
 
 // Phaser 场景键名

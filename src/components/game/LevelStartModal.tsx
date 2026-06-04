@@ -1,39 +1,32 @@
 'use client';
+import { useState, useEffect } from 'react';
 
-interface LevelStartModalProps {
-  title: string;
-  introText: string;
-  mechanicHint: string;
-  onStart: () => void;
-}
+interface Props { title: string; introText: string; mechanicHint: string; onStart: () => void; }
 
-export default function LevelStartModal({
-  title,
-  introText,
-  mechanicHint,
-  onStart,
-}: LevelStartModalProps) {
+export default function LevelStartModal({ title, introText, mechanicHint, onStart }: Props) {
+  const [v, setV] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
+
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70">
-      <div className="bg-[#2a2520] border border-[#c9a96e]/40 rounded-xl p-8 max-w-md mx-4 text-center shadow-2xl">
-        <h2 className="text-2xl font-bold text-[#c9a96e] mb-2">{title}</h2>
-        <div className="w-16 h-0.5 bg-[#c9a96e]/40 mx-auto mb-4" />
-
-        <p className="text-[#e8e0d0] text-sm leading-relaxed mb-4">{introText}</p>
-
-        <div className="bg-[#1a1814] rounded-lg p-3 mb-6">
-          <p className="text-xs text-[#8b7355]">操作提示</p>
-          <p className="text-sm text-[#c9a96e]">{mechanicHint}</p>
+    <div className={`absolute inset-0 z-30 flex items-center justify-center transition-all duration-500 ${v ? 'bg-[#2c2416]/15 backdrop-blur-[2px]' : 'bg-transparent'}`}>
+      <div className={`bg-[#fdf8f0] rounded-2xl p-9 max-w-md mx-6 text-center shadow-xl border border-[#2c2416]/[0.05] transition-all duration-500 ${v ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-5'}`}>
+        {/* Specimen label */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4912a]/[0.06] border border-[#d4912a]/20 mb-5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#d4912a]" />
+          <span className="text-[10px] font-semibold text-[#d4912a] tracking-[0.12em] uppercase">New Discovery</span>
         </div>
 
-        <button
-          onClick={onStart}
-          className="px-8 py-3 bg-[#c9a96e] text-[#1a1814] font-bold
-                     rounded-lg hover:bg-[#e0c78a] active:scale-95
-                     transition-all duration-200 w-full"
-        >
-          开始探索
-        </button>
+        <h2 className="font-display text-2xl font-bold text-[#2c2416] mb-1">{title}</h2>
+        <div className="w-8 h-px bg-[#d4912a]/30 mx-auto my-3" />
+        <p className="text-[#5c4f3a]/80 text-sm leading-relaxed mb-5">{introText}</p>
+
+        <div className="mb-7 p-4 rounded-xl bg-[#f5ede0]/60 border border-[#2c2416]/[0.04]">
+          <p className="text-[10px] text-[#9b8c78] font-semibold tracking-wider uppercase mb-1.5">操作说明</p>
+          <p className="text-sm text-[#2c2416] font-medium">{mechanicHint}</p>
+        </div>
+
+        <button onClick={onStart} className="btn-primary w-full text-sm py-3">开始探索</button>
+        <p className="text-[10px] text-[#9b8c78]/60 mt-3">点击任意位置或按任意键开始</p>
       </div>
     </div>
   );

@@ -55,18 +55,11 @@ export async function signOut() {
 }
 
 export async function getCurrentUser() {
-  const supabase = createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
+  // DEV BYPASS — skip Supabase auth
+  return { id: 'dev-user-001', email: 'dev@phonics.local' };
 }
 
 export async function getUserProfile(userId: string) {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-
-  return data;
+  // DEV BYPASS
+  return { id: userId, username: 'DevPlayer', is_admin: false };
 }
