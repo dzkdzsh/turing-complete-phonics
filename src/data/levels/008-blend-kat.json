@@ -13,7 +13,7 @@
   "winCondition": {
     "type": "target_blend_achieved",
     "targets": [
-      { "inputPhonemes": ["k", "ae", "t"], "expectedOutput": "kaet" }
+      { "inputPhonemes": ["k", "ae", "t"], "expectedOutput": "kat" }
     ],
     "maxAttempts": 25,
     "timeLimitSec": 360

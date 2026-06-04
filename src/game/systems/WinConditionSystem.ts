@@ -58,8 +58,10 @@ export class WinConditionSystem {
         won = this.dragDropSystem.areAllResonatorsActive();
         break;
       case 'all_pairs_matched':
-      case 'encoding_board_complete':
         won = this.dragDropSystem.areAllTargetsFilled();
+        break;
+      case 'encoding_board_complete':
+        won = this.dragDropSystem.areAllTilesRevealed();
         break;
       case 'all_tiles_mapped':
         won = this.dragDropSystem.areAllTilesRevealed();

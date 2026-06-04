@@ -38,6 +38,15 @@ function BossPageContent() {
     })();
   }, [levelId]);
 
+  // 配置就绪后通知 Phaser PreloadScene
+  useEffect(() => {
+    if (config) {
+      import('@/game/event-bus').then(m => {
+        m.eventBus.emit('cmd:start-level', { levelId, config });
+      });
+    }
+  }, [config, levelId]);
+
   const handleExit = useCallback(() => {
     setScreen('level-select');
     router.push('/level-select?era=1');

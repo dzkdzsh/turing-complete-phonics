@@ -13,7 +13,7 @@ interface GameLayoutProps {
 
 export default function GameLayout({ children }: GameLayoutProps) {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#1a1814]">
+    <div className="relative w-full h-screen overflow-hidden" style={{background:'#f5f3f0'}}>
       {/* Phaser 画布层 */}
       <div className="absolute inset-0 z-0">
         <PhaserGame />

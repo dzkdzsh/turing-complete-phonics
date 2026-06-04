@@ -1,45 +1,56 @@
-// PreloadScene —— 从共享存储读取关卡配置，跳转到游玩场景
+// PreloadScene —— 轮询 window 上的关卡配置，跳转到游玩场景
 
 import * as Phaser from 'phaser';
-import { eventBus } from '../event-bus';
 import { SCENES, GAME_WIDTH, GAME_HEIGHT } from '@/lib/constants';
-import { GameEvents } from '@/types/events';
-import { consumeLevelConfig } from '../level-config-store';
+import type { LevelConfig } from '@/types/level';
+
+interface PendingConfig {
+  levelId: string;
+  config: LevelConfig;
+}
+
+const WIN_KEY = '__PHONICS_LEVEL_CONFIG__';
+
+function readConfig(): PendingConfig | null {
+  try {
+    return ((window as unknown as Record<string, unknown>)[WIN_KEY] as PendingConfig) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export class PreloadScene extends Phaser.Scene {
+  private waitText!: Phaser.GameObjects.Text;
+  private retries = 0;
+
   constructor() {
     super({ key: SCENES.PRELOAD });
   }
 
   create() {
-    eventBus.emit(GameEvents.SCENE_READY, { sceneKey: SCENES.PRELOAD });
+    this.waitText = this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '加载关卡配置...', {
+        fontSize: '18px', color: '#8b7355', fontFamily: 'sans-serif',
+      })
+      .setOrigin(0.5);
 
-    const payload = consumeLevelConfig();
+    this.tryLoad();
+  }
 
-    if (payload) {
-      const targetScene = payload.config.isBossLevel
+  private tryLoad() {
+    const cfg = readConfig();
+    if (cfg) {
+      this.waitText.setText('加载完成！');
+      const targetScene = cfg.config.isBossLevel
         ? SCENES.BOSS_GAMEPLAY
         : SCENES.GAMEPLAY;
-
-      this.time.delayedCall(400, () => {
-        this.scene.start(targetScene, { levelConfig: payload.config });
+      this.time.delayedCall(300, () => {
+        this.scene.start(targetScene, { levelConfig: cfg.config });
       });
     } else {
-      this.add
-        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '等待关卡数据...', {
-          fontSize: '18px', color: '#8b7355', fontFamily: 'sans-serif',
-        })
-        .setOrigin(0.5);
-
-      eventBus.on(
-        GameEvents.START_LEVEL,
-        (p: { levelId: string; config: unknown }) => {
-          const targetScene = (p.config as { isBossLevel?: boolean }).isBossLevel
-            ? SCENES.BOSS_GAMEPLAY
-            : SCENES.GAMEPLAY;
-          this.scene.start(targetScene, { levelConfig: p.config });
-        }
-      );
+      this.retries++;
+      this.waitText.setText('等待关卡数据... (' + this.retries + ')');
+      this.time.delayedCall(200, () => this.tryLoad());
     }
   }
 }
