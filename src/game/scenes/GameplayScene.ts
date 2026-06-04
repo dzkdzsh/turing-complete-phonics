@@ -38,9 +38,12 @@ export class GameplayScene extends Phaser.Scene {
     super({ key: sceneKey });
   }
 
-  init(data: { levelConfig: LevelConfig }) {
+  init(data: { levelConfig: LevelConfig; snapshot?: LevelSnapshotData | null }) {
     this.levelConfig = data.levelConfig;
+    this.pendingSnapshot = data.snapshot || null;
   }
+
+  private pendingSnapshot: LevelSnapshotData | null = null;
 
   create() {
     const { width, height } = this.scale;
@@ -90,6 +93,13 @@ export class GameplayScene extends Phaser.Scene {
 
     // 注册场景引用（供 React 层调用 captureSnapshot / restoreSnapshot）
     setActiveScene(this);
+
+    // 从快照恢复游戏状态
+    if (this.pendingSnapshot) {
+      this.time.delayedCall(100, () => {
+        this.restoreSnapshot(this.pendingSnapshot!);
+      });
+    }
   }
 
   /** 场景销毁时清理引用 */

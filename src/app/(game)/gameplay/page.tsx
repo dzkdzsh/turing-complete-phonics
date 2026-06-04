@@ -1,11 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { storeLevelConfig, storePendingSnapshot, getActiveScene } from '@/game/level-config-store';
 import { loadSnapshot, saveSnapshot } from '@/lib/progress';
+import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 import type { LevelSnapshotData } from '@/game/systems/SnapshotSystem';
 
@@ -33,11 +34,12 @@ const mechanicHints: Record<string, string> = {
 
 export default function GameplayPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const levelId = searchParams.get('level') || '001-discover-m';
+  const { setScreen } = useGameStore();
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const elapsedRef = useRef(0);
-  const hasSnapRef = useRef(false);
 
   // 计时器（用于快照的时间戳）
   useEffect(() => {
@@ -48,19 +50,17 @@ export default function GameplayPage() {
   // 加载配置 + 快照
   useEffect(() => {
     setLoading(true);
-    hasSnapRef.current = false;
 
     (async () => {
       const cfg = await loadLevelConfig(levelId);
       if (cfg) {
         storeLevelConfig(levelId, cfg);
       }
-      // 加载快照
+      // 加载快照并传给 Phaser
       try {
         const snap = await loadSnapshot(levelId);
         if (snap?.snapshot_data) {
           storePendingSnapshot(snap.snapshot_data as LevelSnapshotData);
-          hasSnapRef.current = true;
         }
       } catch { /* ignore */ }
       setConfig(cfg);
@@ -68,16 +68,17 @@ export default function GameplayPage() {
     })();
   }, [levelId]);
 
-  // 退出时自动保存快照
+  // 退出时保存快照并导航离开
   const handleExit = useCallback(async () => {
     const scene = getActiveScene();
     if (scene) {
       const data = scene.captureSnapshot(elapsedRef.current);
-      try {
-        await saveSnapshot(levelId, data, elapsedRef.current);
-      } catch { /* ignore */ }
+      await saveSnapshot(levelId, data, elapsedRef.current);
     }
-  }, [levelId]);
+    // 导航回关卡选择
+    setScreen('level-select');
+    router.push('/level-select?era=1');
+  }, [levelId, setScreen, router]);
 
   if (loading || !config) {
     return (

@@ -1,11 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { storeLevelConfig, storePendingSnapshot, getActiveScene } from '@/game/level-config-store';
 import { loadSnapshot, saveSnapshot } from '@/lib/progress';
+import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 import type { LevelSnapshotData } from '@/game/systems/SnapshotSystem';
 
@@ -22,7 +23,9 @@ async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
 
 export default function BossPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const levelId = searchParams.get('level') || '005-boss-sounds';
+  const { setScreen } = useGameStore();
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const elapsedRef = useRef(0);
@@ -36,9 +39,7 @@ export default function BossPage() {
       if (cfg) { storeLevelConfig(levelId, cfg); }
       try {
         const snap = await loadSnapshot(levelId);
-        if (snap?.snapshot_data) {
-          storePendingSnapshot(snap.snapshot_data as LevelSnapshotData);
-        }
+        if (snap?.snapshot_data) storePendingSnapshot(snap.snapshot_data as LevelSnapshotData);
       } catch { /* ignore */ }
       setConfig(cfg);
       setLoading(false);
@@ -49,9 +50,11 @@ export default function BossPage() {
     const scene = getActiveScene();
     if (scene) {
       const data = scene.captureSnapshot(elapsedRef.current);
-      try { await saveSnapshot(levelId, data, elapsedRef.current); } catch { /* ignore */ }
+      await saveSnapshot(levelId, data, elapsedRef.current);
     }
-  }, [levelId]);
+    setScreen('level-select');
+    router.push('/level-select?era=1');
+  }, [levelId, setScreen, router]);
 
   if (loading || !config) {
     return (
