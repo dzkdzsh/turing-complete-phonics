@@ -79,12 +79,14 @@ export class Companion extends Phaser.GameObjects.Container {
   }
 
   setMood(mood: Mood) {
+    if (!this.scene) return;
     this.mood = mood;
     this._draw(mood);
   }
 
   /** 弹出对话气泡 */
   say(text: string, duration: number = 2500) {
+    if (!this.scene) return;
     // Remove old bubble
     if (this.bubbleBg) { this.bubbleBg.destroy(); this.bubbleBg = null; }
     if (this.bubbleText) { this.bubbleText.destroy(); this.bubbleText = null; }
@@ -140,6 +142,7 @@ export class Companion extends Phaser.GameObjects.Container {
   }
 
   private _draw(mood: Mood) {
+    if (!this.scene) return;
     this.eyes.clear();
     this.mouth.clear();
     this.blush.clear();

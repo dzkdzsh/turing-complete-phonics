@@ -62,7 +62,7 @@ function GameplayPageContent() {
 
   const isBoss = config.isBossLevel || config.mechanicType === 'mic_validate';
   return (
-    <GameLayout>
+    <GameLayout levelKey={levelId}>
       <HUD levelId={levelId} isBoss={isBoss} title={config.title} introText={config.introText}
         victoryText={config.victoryText} mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'} onExit={handleExit} />
     </GameLayout>

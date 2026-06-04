@@ -22,6 +22,20 @@ export const ERAS = {
     color: '#8B5CF6', // 紫色
     totalLevels: 10,
   },
+  4: {
+    name: '听写工坊',
+    nameEn: 'Dictation Workshop',
+    description: '听见单词，拼出字母——逆向编码',
+    color: '#e64980', // 玫红
+    totalLevels: 5,
+  },
+  5: {
+    name: '记忆宫殿',
+    nameEn: 'Memory Palace',
+    description: '看词→隐去→默写——真正的记忆挑战',
+    color: '#f97316',
+    totalLevels: 4,
+  },
 } as const;
 
 // 音素对应颜色

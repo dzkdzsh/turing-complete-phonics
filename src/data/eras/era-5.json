@@ -1,0 +1,17 @@
+{
+  "eraNumber": 5,
+  "name": "记忆宫殿",
+  "nameEn": "Memory Palace",
+  "description": "真正的掌握不是能拼，而是能记住。看一眼词，然后隐去——你要靠记忆把它拼出来。这是从「会拼」到「记住」的最后一关。",
+  "color": "#f97316",
+  "totalLevels": 4,
+  "bossLevelId": "019-memory-boss",
+  "levels": [
+    "016-memory-cvc",
+    "017-memory-blend",
+    "018-memory-sight",
+    "019-memory-boss"
+  ],
+  "coreMechanic": "memory_spell",
+  "unlockCondition": "完成 Era 4（015-spell-boss）"
+}

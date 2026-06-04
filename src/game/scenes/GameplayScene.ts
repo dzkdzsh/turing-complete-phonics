@@ -16,6 +16,8 @@ import { MouthShapeButton } from '../objects/MouthShapeButton';
 import { BlenderNode } from '../objects/BlenderNode';
 import { AlphabetTile } from '../objects/AlphabetTile';
 import { Companion } from '../objects/Companion';
+import { SpellingSlot } from '../objects/SpellingSlot';
+import { DragLetter } from '../objects/DragLetter';
 import { PhonemeLibrary } from '../audio/PhonemeLibrary';
 import { AudioManager } from '../audio/AudioManager';
 import type { GameObj } from '../objects/GameObjectFactory';
@@ -37,6 +39,12 @@ export class GameplayScene extends Phaser.Scene {
   private _guidanceBg!: Phaser.GameObjects.Graphics;
   private _guidanceText!: Phaser.GameObjects.Text;
   private _hintText!: Phaser.GameObjects.Text;
+  // Spelling mode
+  private _spellSlots: SpellingSlot[] = [];
+  private _spellLetters: DragLetter[] = [];
+  private _spellWordIndex = 0;
+  private _spellWords: string[] = [];
+  private _spellAttempts = 0;
 
   constructor(sceneKey: string = SCENES.GAMEPLAY) {
     super({ key: sceneKey });
@@ -48,9 +56,8 @@ export class GameplayScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor('#f5f3f0');
-
-    // ---- 背景：羊皮纸纹理 + 声波纹 ----
+    // 半透明背景，让3D层透出
+    this._drawBackground(width, height);
     this._drawBackground(width, height);
 
     this.mouthShapeButtons = [];
@@ -90,6 +97,11 @@ export class GameplayScene extends Phaser.Scene {
     this._updateGuidance('start');
 
     this.spawnObjects();
+
+    // ---- 拼写工坊模式 ----
+    if (this.levelConfig.mechanicType === 'hear_and_spell' || this.levelConfig.mechanicType === 'memory_spell') {
+      this._setupSpellingMode();
+    }
 
     // ---- Companion ----
     this.companion = new Companion(this, 60, height - 80, 1);
@@ -163,6 +175,10 @@ export class GameplayScene extends Phaser.Scene {
       steps.push('💎 点击音素水晶');
       steps.push('✋ 拖到空白石板上');
       steps.push('🔤 揭示对应的字母');
+    } else if (mt === 'hear_and_spell' || mt === 'memory_spell') {
+      steps.push(mt === 'memory_spell' ? '👀 记住出现的单词 (3秒后消失)' : '🔊 点击喇叭听单词发音');
+      steps.push('✋ 把字母拖到对应槽位');
+      steps.push('✅ 拼对所有单词即过关');
     }
 
     // Determine current step
@@ -191,61 +207,154 @@ export class GameplayScene extends Phaser.Scene {
     this._hintText.setText(`💡 ${hint}`);
   }
 
-  /** 羊皮纸纹理 + 声波纹 + 浮游音素 */
-  private _drawBackground(w: number, h: number) {
-    const g = this.add.graphics().setDepth(-10);
+  /** 拼写工坊模式设置 */
+  private _setupSpellingMode() {
+    const w = this.scale.width, h = this.scale.height;
+    this._spellWords = (this.levelConfig as any).words || ['cat'];
+    this._spellWordIndex = 0;
+    this._spellAttempts = 0;
+    this._loadSpellWord();
+  }
 
-    // --- 羊皮纸底色渐变 ---
-    const topR = 254, topG = 249, topB = 240;
-    const botR = 250, botG = 243, botB = 230;
-    for (let i = 0; i < 24; i++) {
-      const t = i / 23;
-      g.fillStyle(Phaser.Display.Color.GetColor(
-        Math.round(topR + (botR - topR) * t),
-        Math.round(topG + (botG - topG) * t),
-        Math.round(topB + (botB - topB) * t)));
-      g.fillRect(0, i * h / 24, w, h / 24 + 2);
+  private _loadSpellWord() {
+    // Clean up previous
+    this._spellSlots.forEach(s => s.destroy());
+    this._spellLetters.forEach(l => l.destroy());
+    this._spellSlots = [];
+    this._spellLetters = [];
+
+    const w = this.scale.width, h = this.scale.height;
+    const word = this._spellWords[this._spellWordIndex];
+    if (!word) {
+      eventBus.emit(GameEvents.WIN_CONDITION_MET, { stars: Math.max(1, 4 - this._spellAttempts), timeSec: 0 });
+      return;
     }
 
-    // --- 淡墨横格线 (笔记本) ---
-    g.lineStyle(1, 0x8b7355, 0.04);
-    for (let y = 60; y < h - 40; y += 28) {
-      g.lineBetween(30, y, w - 30, y);
-    }
-    // 左竖线
-    g.lineStyle(1, 0xef4444, 0.06);
-    g.lineBetween(42, 50, 42, h - 50);
+    const slotSize = 64, gap = 12, totalW = word.length * slotSize + (word.length - 1) * gap;
+    const slotStartX = w / 2 - totalW / 2 + slotSize / 2;
+    const slotY = h / 2 + 40;
 
-    // --- 声波纹弧线 ---
-    const cx = w / 2, cy = h / 2 + 30;
-    for (let ring = 1; ring <= 4; ring++) {
-      g.lineStyle(1, 0x6366f1, 0.04 - ring * 0.01);
-      g.beginPath();
-      for (let angle = 0; angle <= Math.PI * 2; angle += 0.1) {
-        const rx = 120 + ring * 50 + Math.sin(angle * 3) * 8;
-        const ry = 80 + ring * 30 + Math.cos(angle * 2) * 5;
-        const px = cx + Math.cos(angle) * rx;
-        const py = cy + Math.sin(angle) * ry;
-        if (angle === 0) g.moveTo(px, py); else g.lineTo(px, py);
-      }
-      g.strokePath();
+    // Create slots
+    for (let i = 0; i < word.length; i++) {
+      const sx = slotStartX + i * (slotSize + gap);
+      const slot = new SpellingSlot(this, sx, slotY, slotSize, i);
+      this._spellSlots.push(slot);
     }
 
-    // --- 角落装饰：音素符号 ---
-    const symbols = ['/m/', '/s/', '/a/', '/k/', '/t/', '♪', '♫', '~'];
-    symbols.forEach((sym, i) => {
-      const sx = 40 + Math.random() * (w - 80);
-      const sy = 70 + Math.random() * (h - 110);
-      const t = this.add.text(sx, sy, sym, {
-        fontSize: `${Math.floor(Math.random() * 10 + 10)}px`,
-        color: '#d4cfc9', fontFamily: 'serif',
-      }).setAlpha(0.12).setDepth(-5);
-      this.tweens.add({
-        targets: t, y: sy - 15, alpha: 0.04,
-        duration: Phaser.Math.Between(4000, 8000), repeat: -1, yoyo: true,
-        delay: Phaser.Math.Between(0, 3000),
+    // Create letter tiles (shuffled, with distractors)
+    const letters = word.split('');
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    const distractors: string[] = [];
+    while (distractors.length < Math.max(2, 6 - letters.length)) {
+      const r = alphabet[Phaser.Math.Between(0, 25)];
+      if (!letters.includes(r) && !distractors.includes(r)) distractors.push(r);
+    }
+    const candidates = Phaser.Utils.Array.Shuffle([...letters, ...distractors]);
+    const tileSize = 56, tileGap = 10;
+    const tileTotalW = candidates.length * tileSize + (candidates.length - 1) * tileGap;
+    const tileStartX = w / 2 - tileTotalW / 2 + tileSize / 2;
+    const tileY = slotY + 100;
+
+    candidates.forEach((l, i) => {
+      const tx = tileStartX + i * (tileSize + tileGap);
+      const tile = new DragLetter(this, tx, tileY, l, tileSize);
+      this._spellLetters.push(tile);
+
+      // Drop on slot
+      this.input.on('drop', (_p: Phaser.Input.Pointer, tileObj: DragLetter, slot: SpellingSlot) => {
+        if (slot.filledLetter) { tileObj.returnToOrigin(); return; }
+        if (tileObj !== tile) return;
+        slot.fill(l);
+        tileObj.disable();
+        tileObj.snapTo(slot.x, slot.y);
+        this._checkSpellComplete();
       });
     });
+
+    // Speaker button
+    const spY = slotY - 110;
+    const spG = this.add.graphics().setDepth(5);
+    spG.fillStyle(0xffffff, 0.9);
+    spG.fillCircle(w / 2, spY, 42);
+    spG.lineStyle(3, 0xd4912a, 0.4);
+    spG.strokeCircle(w / 2, spY, 42);
+    const spTxt = this.add.text(w / 2, spY, '🔊', { fontSize: '40px' }).setOrigin(0.5).setDepth(6);
+    const spZone = this.add.zone(w / 2, spY, 90, 90).setInteractive({ useHandCursor: true }).setDepth(7);
+    spZone.on('pointerdown', () => {
+      this._speakWord(word);
+      this.tweens.add({ targets: spTxt, scaleX: 1.3, scaleY: 1.3, duration: 120, yoyo: true, ease: 'Bounce.easeOut' });
+    });
+
+    // Word progress indicator
+    const progressText = this.add.text(w / 2, spY - 55, `${this._spellWordIndex + 1} / ${this._spellWords.length}`, {
+      fontSize: '13px', color: '#9b8c78', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(5);
+
+    // Auto-speak
+    this.time.delayedCall(500, () => this._speakWord(word));
+
+    // --- Memory mode: flash word then hide ---
+    if (this.levelConfig.mechanicType === 'memory_spell') {
+      const flashText = this.add.text(w / 2, spY, word.toUpperCase(), {
+        fontSize: '56px', color: '#f97316', fontFamily: 'Crimson Text, serif', fontStyle: 'bold',
+        stroke: '#fff', strokeThickness: 4,
+      }).setOrigin(0.5).setDepth(20).setAlpha(0);
+      this.tweens.add({ targets: flashText, alpha: 1, duration: 300, ease: 'Cubic.easeOut' });
+      this.time.delayedCall(3000, () => {
+        this.tweens.add({ targets: flashText, alpha: 0, duration: 400, onComplete: () => flashText.destroy() });
+      });
+    }
+
+    // Store for cleanup
+    (this as any)._spellCleanup = { spG, spTxt, spZone, progressText };
+  }
+
+  private _checkSpellComplete() {
+    const allFilled = this._spellSlots.every(s => s.filledLetter !== null);
+    if (!allFilled) return;
+
+    const word = this._spellWords[this._spellWordIndex];
+    const spelled = this._spellSlots.map(s => s.filledLetter).join('');
+    this._spellAttempts++;
+
+    if (spelled === word) {
+      eventBus.emit(GameEvents.PHONEME_DETECTED, { phoneme: word });
+      this.companion?.setMood('happy');
+      this.companion?.say('拼对了！🎉', 1500);
+      this.time.delayedCall(1200, () => {
+        this._spellWordIndex++;
+        this._loadSpellWord();
+      });
+    } else {
+      this.companion?.setMood('sad');
+      this.companion?.say('再试试！', 1200);
+      this.time.delayedCall(800, () => {
+        this._spellSlots.forEach(s => s.clear());
+        this._spellLetters.forEach(l => { l.enable(); l.returnToOrigin(); });
+      });
+    }
+  }
+
+  private _speakWord(word: string) {
+    try {
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = 'en-US'; u.rate = 0.6; u.pitch = 1.1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch (e) { /* unavailable */ }
+  }
+
+  /** 羊皮纸纹理 + 声波纹 + 浮游音素 */
+  private _drawBackground(w: number, h: number) {
+    const g = this.add.graphics().setDepth(-10).setAlpha(0.3);
+    // Cartoon sky gradient
+    const topR=91,topG=164,topB=230,botR=184,botG=228,botB=240;
+    for (let i=0;i<20;i++){const t=i/19;g.fillStyle(Phaser.Display.Color.GetColor(Math.round(topR+(botR-topR)*t),Math.round(topG+(botG-topG)*t),Math.round(topB+(botB-topB)*t)));g.fillRect(0,i*h/20,w,h/20+2);}
+    // Green hills
+    g.fillStyle(0x7EC850,0.25);g.fillEllipse(100,h+10,600,120);
+    g.fillStyle(0x5DA83A,0.2);g.fillEllipse(700,h+10,500,100);
+    // Clouds
+    for(let i=0;i<3;i++){const cx=Phaser.Math.Between(50,w-50),cy=Phaser.Math.Between(30,100);g.fillStyle(0xffffff,0.4);g.fillCircle(cx,cy,22);g.fillCircle(cx+18,cy-6,16);g.fillCircle(cx+30,cy,18);}
   }
 
   private getMechanicHint(): string {
@@ -263,6 +372,10 @@ export class GameplayScene extends Phaser.Scene {
         return '将音素水晶拖到空白石板上——揭开对应字母！';
       case 'encoding_board':
         return '将音素水晶拖到正确的编码槽位置';
+      case 'hear_and_spell':
+        return '🔊 听发音 → 拖字母到槽位拼单词';
+      case 'memory_spell':
+        return '👀 记住闪现的词 → 隐去后拼出来';
       case 'mic_validate':
         return '点击一颗水晶 → 对着麦克风发出水晶上标注的音素';
       default:

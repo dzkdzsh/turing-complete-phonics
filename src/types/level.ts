@@ -8,6 +8,8 @@ export type MechanicType =
   | 'connect_and_blend'
   | 'multi_blend'
   | 'invent_letter'
+  | 'hear_and_spell'
+  | 'memory_spell'
   | 'encoding_board';
 
 export type InputType = 'mouse' | 'mic' | 'mouse_and_mic';
@@ -119,6 +121,7 @@ export interface LevelConfig {
   requiresMic: boolean;
   gameScene: GameSceneConfig;
   gameObjects: GameObjectDef[];
+  words?: string[];
   audioClips: AudioClipDef[];
   hints: HintDef[];
   failureModes: FailureMode[];

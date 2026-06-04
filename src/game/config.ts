@@ -15,7 +15,7 @@ export function createGameConfig(
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     parent,
-    backgroundColor: '#f5f3f0',
+    transparent: true,
     render: {
       antialias: true,
       pixelArt: false,

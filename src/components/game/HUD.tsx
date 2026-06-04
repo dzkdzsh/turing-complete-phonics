@@ -25,7 +25,7 @@ export default function HUD({ levelId, isBoss=false, title='', introText='', vic
 
   const handleExit=useCallback(()=>{eventBus.emit(GameEvents.PAUSE_GAME,{});if(onExit)onExit();else{setScreen('level-select');router.push('/level-select?era=1');}},[onExit,setScreen,router]);
 
-  const handleNext=()=>{const s=levelId.substring(levelId.indexOf('-')+1);const n=CHAIN[s];if(n){const num=parseInt(levelId.split('-')[0]);const nid=`${String(num+1).padStart(3,'0')}-${n}`;setScreen(n==='boss-sounds'?'boss':'gameplay');router.push(`/${n==='boss-sounds'?'boss':'gameplay'}?level=${nid}`);}else{setScreen('era-map');router.push('/era-select');}};
+  const handleNext=()=>{const s=levelId.substring(levelId.indexOf('-')+1);const n=CHAIN[s];if(n){const num=parseInt(levelId.split('-')[0]);const nid=`${String(num+1).padStart(3,'0')}-${n}`;const path=n==='boss-sounds'?'boss':'gameplay';window.location.href=`/${path}?level=${nid}`;}else{setScreen('era-map');router.push('/era-select');}};
 
   const fmt=(s:number)=>{const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;};
   const lvNum=levelId.split('-')[1]||'';

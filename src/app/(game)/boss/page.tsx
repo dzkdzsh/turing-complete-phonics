@@ -61,7 +61,7 @@ function BossPageContent() {
   }
 
   return (
-    <GameLayout>
+    <GameLayout levelKey={levelId}>
       <HUD levelId={levelId} isBoss title={config.title}
         introText={config.introText} victoryText={config.victoryText}
         mechanicHint="点击水晶 → 对着麦克风发出对应的声音" onExit={handleExit} />

@@ -1,0 +1,18 @@
+{
+  "eraNumber": 4,
+  "name": "听写工坊",
+  "nameEn": "Dictation Workshop",
+  "description": "听见一个词，用字母拼出它——这就是听写。从声音直接到文字，不需要看，只需要听。",
+  "color": "#e64980",
+  "totalLevels": 5,
+  "bossLevelId": "015-spell-boss",
+  "levels": [
+    "011-spell-cvc",
+    "012-spell-cvcc",
+    "013-spell-digraph",
+    "014-spell-long",
+    "015-spell-boss"
+  ],
+  "coreMechanic": "hear_and_spell",
+  "unlockCondition": "完成 Era 3（010-encoding-board）"
+}

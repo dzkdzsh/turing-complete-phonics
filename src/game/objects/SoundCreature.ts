@@ -53,11 +53,9 @@ export class SoundCreature extends Phaser.GameObjects.Container {
     }).setOrigin(0.5);
     this.add(phonemeText);
 
-    // 输出端口 (右侧)
-    const outPort = scene.add.ellipse(28, 0, 8, 8, this.baseColor, 0.8);
-    outPort.setStrokeStyle(1, 0xffffff, 0.5);
+    // 输出端口 (右侧) — subtle indicator
+    const outPort = scene.add.ellipse(28, 0, 6, 6, this.baseColor, 0.3);
     this.add(outPort);
-    scene.tweens.add({ targets: outPort, alpha: 0.4, duration: 800, yoyo: true, repeat: -1 });
 
     // 交互
     this.setSize(60, 60);
