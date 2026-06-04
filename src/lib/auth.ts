@@ -38,11 +38,7 @@ export async function signUp(email: string, password: string, username: string) 
 
 export async function signIn(email: string, password: string) {
   const supabase = createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
   return { user: data.user };
 }
@@ -64,7 +60,7 @@ export async function getUserProfile(userId: string) {
     .from('user_profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
   return data;
 }

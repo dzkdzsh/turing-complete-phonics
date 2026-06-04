@@ -34,7 +34,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
 
       // 已登录，更新 store
-      setUser(user.id, false);
+      setUser(user.id);
 
       // 读取用户档案（管理员检测）
       const profile = await getUserProfile(user.id);

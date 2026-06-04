@@ -82,7 +82,7 @@ export async function loadSnapshot(levelId: string) {
     .select('*')
     .eq('user_id', user.id)
     .eq('level_id', levelId)
-    .single();
+    .maybeSingle();
 
   return data ?? null;
 }

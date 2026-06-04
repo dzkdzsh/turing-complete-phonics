@@ -16,7 +16,7 @@ interface GameStore {
   userId: string | null;
   isAdmin: boolean;
   username: string;
-  setUser: (userId: string, isAnonymous: boolean) => void;
+  setUser: (userId: string) => void;
   setIsAdmin: (isAdmin: boolean) => void;
   setUsername: (username: string) => void;
 

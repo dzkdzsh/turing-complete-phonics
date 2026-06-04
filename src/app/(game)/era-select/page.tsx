@@ -6,11 +6,11 @@ import { ERAS } from '@/lib/constants';
 
 export default function EraSelectPage() {
   const router = useRouter();
-  const { unlockedEras, completedLevels, setCurrentEra, setScreen } =
+  const { unlockedEras, completedLevels, isAdmin, setCurrentEra, setScreen } =
     useGameStore();
 
   const handleEraClick = (eraNum: number) => {
-    if (!unlockedEras.includes(eraNum)) return;
+    if (!isAdmin && !unlockedEras.includes(eraNum)) return;
     setCurrentEra(eraNum);
     setScreen('level-select');
     router.push(`/level-select?era=${eraNum}`);
@@ -24,7 +24,7 @@ export default function EraSelectPage() {
       <div className="flex gap-6 flex-wrap justify-center">
         {([1, 2, 3] as const).map((eraNum) => {
           const era = ERAS[eraNum];
-          const unlocked = unlockedEras.includes(eraNum);
+          const unlocked = isAdmin || unlockedEras.includes(eraNum);
           const completed = completedLevels.filter((id) =>
             id.startsWith(`00${eraNum}`)
           ).length;
