@@ -1,4 +1,4 @@
-// Resonator —— Era 1 共振器：接收声音生物后发光并播放声音
+// Resonator —— Era 1 共振器 / Boss 关水晶
 
 import * as Phaser from 'phaser';
 import type { GameObjectDef } from '@/types/level';
@@ -7,12 +7,16 @@ import { GameEvents } from '@/types/events';
 
 export class Resonator extends Phaser.GameObjects.Container {
   public objectId: string;
+  public phoneme: string;
   public isActivated = false;
+  public isCrystal: boolean;
+
   private acceptedIds: string[];
-  private resonatorBody: Phaser.GameObjects.Rectangle;
-  private core: Phaser.GameObjects.Ellipse;
-  private lab: Phaser.GameObjects.Text;
-  private portIndicator: Phaser.GameObjects.Ellipse;
+  private resonatorBody!: Phaser.GameObjects.Rectangle;
+  private core!: Phaser.GameObjects.Ellipse;
+  private crystalGlow!: Phaser.GameObjects.Ellipse;
+  private lab!: Phaser.GameObjects.Text;
+  private portIndicator!: Phaser.GameObjects.Ellipse;
 
   constructor(scene: Phaser.Scene, def: GameObjectDef) {
     const x = def.position.x;
@@ -20,22 +24,76 @@ export class Resonator extends Phaser.GameObjects.Container {
     super(scene, x, y);
 
     this.objectId = def.id;
+    this.phoneme = def.phoneme || '';
     this.acceptedIds = def.accepts || [];
+    this.isCrystal = def.initialState === 'locked';
 
-    // 外层框
+    if (this.isCrystal) {
+      this.buildCrystal(scene, def);
+    } else {
+      this.buildResonator(scene, def);
+    }
+
+    scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
+  }
+
+  /** Boss 关：圆形发光水晶 */
+  private buildCrystal(scene: Phaser.Scene, def: GameObjectDef) {
+    // 外层光晕
+    this.crystalGlow = scene.add.ellipse(0, 0, 70, 70, 0x444466, 0.25);
+    this.add(this.crystalGlow);
+
+    // 水晶核心
+    this.core = scene.add.ellipse(0, 0, 44, 44, 0x334466, 0.7);
+    this.core.setStrokeStyle(2, 0x6677aa, 0.6);
+    this.add(this.core);
+
+    // 音素标识
+    const phonemeText = scene.add.text(0, -4, this.phoneme ? `/${this.phoneme}/` : '?', {
+      fontSize: '18px',
+      color: '#8899cc',
+      fontFamily: 'monospace',
+      fontStyle: 'bold',
+    });
+    phonemeText.setOrigin(0.5);
+    this.add(phonemeText);
+
+    // 标签
+    this.lab = scene.add.text(0, 35, def.label || '水晶', {
+      fontSize: '11px',
+      color: '#8899cc',
+      fontFamily: 'sans-serif',
+      align: 'center',
+    });
+    this.lab.setOrigin(0.5, 0);
+    this.add(this.lab);
+
+    this.setSize(80, 80);
+    this.setInteractive({ cursor: 'pointer' });
+
+    // 悬停时水晶发光增强
+    this.on('pointerover', () => {
+      if (this.isActivated) return;
+      scene.tweens.add({ targets: this.crystalGlow, scaleX: 1.25, scaleY: 1.25, alpha: 0.45, duration: 200 });
+    });
+    this.on('pointerout', () => {
+      if (this.isActivated) return;
+      scene.tweens.add({ targets: this.crystalGlow, scaleX: 1, scaleY: 1, alpha: 0.25, duration: 200 });
+    });
+  }
+
+  /** Era 1：矩形共振器 */
+  private buildResonator(scene: Phaser.Scene, def: GameObjectDef) {
     this.resonatorBody = scene.add.rectangle(0, 0, 100, 80, 0x333333, 0.6);
     this.resonatorBody.setStrokeStyle(2, 0xc9a96e, 0.5);
     this.add(this.resonatorBody);
 
-    // 核心（未激活时暗淡）
     this.core = scene.add.ellipse(0, 0, 30, 30, 0x666666, 0.5);
     this.add(this.core);
 
-    // 输入端口指示器
     this.portIndicator = scene.add.ellipse(-50, 0, 12, 12, 0xc9a96e, 0.6);
     this.add(this.portIndicator);
 
-    // 标签
     this.lab = scene.add.text(0, 55, def.label || '共振器', {
       fontSize: '12px',
       color: '#8b7355',
@@ -45,23 +103,18 @@ export class Resonator extends Phaser.GameObjects.Container {
     this.lab.setOrigin(0.5, 0);
     this.add(this.lab);
 
-    // 设置为可放置目标
     this.setSize(120, 100);
     this.setInteractive({ cursor: 'pointer' });
-
-    scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
   }
 
-  /** 接收声音生物 */
+  /** 激活 */
   activate(phoneme: string) {
     if (this.isActivated) return;
-
     this.isActivated = true;
 
-    // 核心发光动画
     this.scene.tweens.add({
       targets: this.core,
-      fillColor: 0xc9a96e,
+      fillColor: this.isCrystal ? 0x10b981 : 0xc9a96e,
       fillAlpha: 0.9,
       scaleX: 1.5,
       scaleY: 1.5,
@@ -69,26 +122,35 @@ export class Resonator extends Phaser.GameObjects.Container {
       ease: 'Back.easeOut',
     });
 
-    // 边框高亮
-    this.resonatorBody.setStrokeStyle(2, 0xc9a96e, 1);
+    if (this.resonatorBody) {
+      this.resonatorBody.setStrokeStyle(2, 0x10b981, 1);
+    }
+    if (this.crystalGlow) {
+      this.scene.tweens.add({
+        targets: this.crystalGlow,
+        fillColor: 0x10b981,
+        fillAlpha: 0.6,
+        scaleX: 1.5,
+        scaleY: 1.5,
+        duration: 500,
+      });
+    }
+    if (this.core) {
+      this.core.setStrokeStyle(2, 0x10b981, 0.9);
+    }
 
     // 持续脉动
     this.scene.tweens.add({
       targets: this.core,
-      alpha: { from: 1, to: 0.7 },
+      alpha: { from: 1, to: 0.5 },
       duration: 800,
       yoyo: true,
       repeat: -1,
     });
 
-    // 通知胜利条件系统
-    eventBus.emit(GameEvents.PHONEME_DETECTED, {
-      phoneme,
-      confidence: 1.0,
-    });
+    eventBus.emit(GameEvents.PHONEME_DETECTED, { phoneme, confidence: 1.0 });
   }
 
-  /** 检查是否接受某个对象 */
   accepts(objectId: string): boolean {
     return this.acceptedIds.includes(objectId);
   }

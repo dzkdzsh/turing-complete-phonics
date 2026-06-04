@@ -124,6 +124,8 @@ export class GameplayScene extends Phaser.Scene {
         return '将音素水晶拖到空白石板上——揭开对应字母！';
       case 'encoding_board':
         return '将音素水晶拖到正确的编码槽位置';
+      case 'mic_validate':
+        return '点击一颗水晶 → 对着麦克风发出水晶上标注的音素';
       default:
         return '探索工作台上的装置吧！';
     }
