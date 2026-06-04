@@ -1,48 +1,44 @@
-// AudioManager —— 音频管理器单例，封装 Web Audio API
+// AudioManager —— 使用 Web Speech API 发出真实的音素声音
 
 type SFXType = 'click' | 'success' | 'failure' | 'unlock';
 
-// 每个音素的合成参数
-interface PhonemeSynthParams {
-  type: OscillatorType;
-  frequency: number;
-  duration: number;
-  gain: number;
-}
-
-// 预定义的音素合成参数（模拟真实音素特征）
-const PHONEME_SYNTH: Record<string, PhonemeSynthParams> = {
-  m: { type: 'sine', frequency: 250, duration: 0.5, gain: 0.3 },
-  s: { type: 'sawtooth', frequency: 5000, duration: 0.6, gain: 0.08 },
-  a: { type: 'triangle', frequency: 800, duration: 0.5, gain: 0.25 },
-  k: { type: 'square', frequency: 1500, duration: 0.15, gain: 0.15 },
-  ae: { type: 'triangle', frequency: 700, duration: 0.4, gain: 0.25 },
-  t: { type: 'square', frequency: 3000, duration: 0.1, gain: 0.12 },
+// 每个音素对应的 TTS 发音文本
+const PHONEME_SPEECH: Record<string, string> = {
+  m: 'mmm',
+  s: 'sss',
+  a: 'ah',
+  k: 'k',
+  ae: 'aah',
+  t: 't',
 };
 
-// 合成音（两个音素快速连读）
-const BLEND_SYNTH: Record<string, PhonemeSynthParams[]> = {
-  ma: [
-    { type: 'sine', frequency: 250, duration: 0.25, gain: 0.3 },
-    { type: 'triangle', frequency: 800, duration: 0.3, gain: 0.25 },
-  ],
-  sa: [
-    { type: 'sawtooth', frequency: 5000, duration: 0.3, gain: 0.08 },
-    { type: 'triangle', frequency: 800, duration: 0.3, gain: 0.25 },
-  ],
-  kat: [
-    { type: 'square', frequency: 1500, duration: 0.1, gain: 0.15 },
-    { type: 'triangle', frequency: 700, duration: 0.2, gain: 0.25 },
-    { type: 'square', frequency: 3000, duration: 0.1, gain: 0.12 },
-  ],
+// 合成音
+const BLEND_SPEECH: Record<string, string[]> = {
+  ma: ['m', 'ah'],
+  sa: ['s', 'ah'],
+  kat: ['k', 'aah', 't'],
 };
 
 export class AudioManager {
   private static instance: AudioManager;
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private synth: SpeechSynthesis | null = null;
+  private voicesLoaded = false;
 
-  private constructor() {}
+  private constructor() {
+    // 预加载 TTS 语音列表
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      this.synth = window.speechSynthesis;
+      // 触发语音加载
+      this.synth.getVoices();
+      this.synth.onvoiceschanged = () => {
+        this.voicesLoaded = true;
+      };
+      // 部分浏览器不触发 onvoiceschanged，直接标记
+      setTimeout(() => { this.voicesLoaded = true; }, 500);
+    }
+  }
 
   static getInstance(): AudioManager {
     if (!AudioManager.instance) {
@@ -64,132 +60,129 @@ export class AudioManager {
     return this.ctx;
   }
 
-  /** 播放单个音素 */
+  private getSynth(): SpeechSynthesis {
+    if (!this.synth) {
+      this.synth = window.speechSynthesis;
+    }
+    return this.synth;
+  }
+
+  /** 播放单个音素 —— 用 TTS 发出真实人声 */
   playPhoneme(phoneme: string) {
-    const params = PHONEME_SYNTH[phoneme];
-    if (!params) {
+    const text = PHONEME_SPEECH[phoneme];
+    if (!text) {
       console.warn(`[AudioManager] 未知音素: ${phoneme}`);
       return;
     }
-    this.playSynth(params);
+    this.speak(text);
   }
 
-  /** 播放合成音（如 /ma/、/sa/） */
+  /** 播放合成音（两个音素连续 TTS） */
   playBlend(blendId: string) {
-    const sequence = BLEND_SYNTH[blendId];
+    const sequence = BLEND_SPEECH[blendId];
     if (!sequence) {
-      console.warn(`[AudioManager] 未知合成音: ${blendId}`);
+      // 回退：直接说这个词
+      this.speak(blendId.replace('ae', 'a').replace('kat', 'cat'));
       return;
     }
     let delay = 0;
-    for (const params of sequence) {
-      setTimeout(() => this.playSynth(params), delay * 1000);
-      delay += params.duration;
+    for (const phoneme of sequence) {
+      const text = PHONEME_SPEECH[phoneme] || phoneme;
+      setTimeout(() => this.speak(text), delay);
+      delay += 350;
     }
   }
 
-  /** 播放 UI 音效 */
+  private speak(text: string) {
+    const synth = this.getSynth();
+    synth.cancel(); // 取消之前的语音
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.rate = 0.4;   // 很慢，让孩子听清楚
+    utter.pitch = 1.0;
+    utter.volume = 0.8;
+
+    // 选一个适合儿童的女声（优先英文母语）
+    const voices = synth.getVoices();
+    const preferred = voices.find(
+      (v) => v.lang === 'en-US' && v.name.includes('Female')
+    ) || voices.find(
+      (v) => v.lang === 'en-US'
+    ) || voices.find(
+      (v) => v.lang.startsWith('en')
+    );
+
+    if (preferred) utter.voice = preferred;
+
+    synth.speak(utter);
+  }
+
+  /** 播放 UI 音效（仍用 Web Audio API 振荡器——不需要人声） */
   playSFX(sfx: SFXType) {
     const ctx = this.ensureContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.connect(gain);
     gain.connect(this.masterGain || ctx.destination);
-
     const now = ctx.currentTime;
 
     switch (sfx) {
       case 'click':
         osc.type = 'sine';
-        osc.frequency.value = 600;
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
         osc.start(now);
-        osc.stop(now + 0.08);
+        osc.stop(now + 0.06);
         break;
-
       case 'success':
         osc.type = 'sine';
         osc.frequency.setValueAtTime(523, now);
-        osc.frequency.setValueAtTime(659, now + 0.12);
-        osc.frequency.setValueAtTime(784, now + 0.24);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.frequency.setValueAtTime(659, now + 0.1);
+        osc.frequency.setValueAtTime(784, now + 0.2);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
         osc.start(now);
-        osc.stop(now + 0.5);
+        osc.stop(now + 0.45);
         break;
-
       case 'failure':
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.linearRampToValueAtTime(100, now + 0.4);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.35);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
         osc.start(now);
-        osc.stop(now + 0.4);
+        osc.stop(now + 0.35);
         break;
-
       case 'unlock':
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(1200, now + 0.6);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.5);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
         osc.start(now);
-        osc.stop(now + 0.8);
+        osc.stop(now + 0.7);
         break;
     }
   }
 
-  private playSynth(params: PhonemeSynthParams) {
-    const ctx = this.ensureContext();
-    const now = ctx.currentTime;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-
-    osc.type = params.type;
-    osc.frequency.value = params.frequency;
-
-    // 鼻音 /m/ 需要低通滤波模拟鼻腔共振
-    if (params.frequency < 300 && params.type === 'sine') {
-      filter.type = 'lowpass';
-      filter.frequency.value = 400;
-      filter.Q.value = 2;
-      osc.connect(filter);
-      filter.connect(gain);
-    } else {
-      osc.connect(gain);
-    }
-
-    gain.connect(this.masterGain || ctx.destination);
-    gain.gain.setValueAtTime(params.gain, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + params.duration);
-
-    osc.start(now);
-    osc.stop(now + params.duration);
-  }
-
-  /** 获取 AudioContext（供 PhonemeAnalyzer 使用） */
   getContext(): AudioContext | null {
     return this.ctx;
   }
 
-  /** 设置主音量 */
   setVolume(level: number) {
     if (this.masterGain) {
       this.masterGain.gain.value = Math.max(0, Math.min(1, level));
     }
   }
 
-  /** 销毁 */
   destroy() {
     if (this.ctx) {
       this.ctx.close();
       this.ctx = null;
       this.masterGain = null;
     }
+    this.synth?.cancel();
   }
 }
