@@ -2,12 +2,11 @@
 import { useState, useEffect, useCallback } from 'react'; import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state'; import { eventBus } from '@/game/event-bus';
 import { GameEvents } from '@/types/events'; import type { WinConditionMetPayload } from '@/types/events';
-import { saveProgress } from '@/lib/progress';
 import LevelStartModal from './LevelStartModal'; import VictoryModal from './VictoryModal';
 
 interface HUDProps { levelId: string; isBoss?: boolean; title?: string; introText?: string; victoryText?: string; mechanicHint?: string; onExit?: () => void; }
 
-const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'discover-n','discover-n':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'blend-sh','blend-sh':'invent-m','invent-m':'encoding-board'};
+const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'invent-m','invent-m':'encoding-board'};
 
 export default function HUD({ levelId, isBoss=false, title='', introText='', victoryText='', mechanicHint='', onExit }: HUDProps) {
   const router = useRouter(); const { completeLevel, unlockLevel, setScreen } = useGameStore();
@@ -20,7 +19,7 @@ export default function HUD({ levelId, isBoss=false, title='', introText='', vic
     const h=(p:WinConditionMetPayload)=>{setStars(p.stars||3);completeLevel(levelId,p.stars||3);
       const s=levelId.substring(levelId.indexOf('-')+1);const n=CHAIN[s];
       if(n){const num=parseInt(levelId.split('-')[0]);unlockLevel(`${String(num+1).padStart(3,'0')}-${n}`);}
-      saveProgress(levelId,p.stars||3,{timeSec:p.timeSec});import('@/lib/progress').then(m=>m.deleteSnapshot(levelId));setShowVictory(true);};
+      setShowVictory(true);};
     eventBus.on(GameEvents.WIN_CONDITION_MET,h);return()=>{eventBus.off(GameEvents.WIN_CONDITION_MET,h);};
   },[levelId,completeLevel,unlockLevel]);
 

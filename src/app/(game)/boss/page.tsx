@@ -2,14 +2,12 @@
 
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { storeLevelConfig, storePendingSnapshot, getActiveScene } from '@/game/level-config-store';
-import { loadSnapshot, saveSnapshot } from '@/lib/progress';
+import { storeLevelConfig } from '@/game/level-config-store';
 import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
-import type { LevelSnapshotData } from '@/game/systems/SnapshotSystem';
 
 const configCache: Record<string, LevelConfig> = {};
 
@@ -29,37 +27,25 @@ function BossPageContent() {
   const { setScreen } = useGameStore();
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const elapsedRef = useRef(0);
-
-  useEffect(() => { const t = setInterval(() => elapsedRef.current++, 1000); return () => clearInterval(t); }, []);
 
   useEffect(() => {
     setLoading(true);
     (async () => {
       const cfg = await loadLevelConfig(levelId);
       if (cfg) { storeLevelConfig(levelId, cfg); }
-      try {
-        const snap = await loadSnapshot(levelId);
-        if (snap?.snapshot_data) storePendingSnapshot(snap.snapshot_data as LevelSnapshotData);
-      } catch { /* ignore */ }
       setConfig(cfg);
       setLoading(false);
     })();
   }, [levelId]);
 
-  const handleExit = useCallback(async () => {
-    const scene = getActiveScene();
-    if (scene) {
-      const data = scene.captureSnapshot(elapsedRef.current);
-      await saveSnapshot(levelId, data, elapsedRef.current);
-    }
+  const handleExit = useCallback(() => {
     setScreen('level-select');
     router.push('/level-select?era=1');
-  }, [levelId, setScreen, router]);
+  }, [setScreen, router]);
 
   if (loading || !config) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#1a1814]">
+      <div className="flex items-center justify-center h-screen" style={{background:'#f5f3f0'}}>
         <p className="text-[#8b7355]">加载 Boss 关卡中...</p>
       </div>
     );
@@ -76,7 +62,7 @@ function BossPageContent() {
 
 export default function BossPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen bg-[#1a1814]"><p className="text-[#8b7355]">加载中...</p></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen" style={{background:'#f5f3f0'}}><p className="text-[#8b7355]">加载中...</p></div>}>
       <BossPageContent />
     </Suspense>
   );

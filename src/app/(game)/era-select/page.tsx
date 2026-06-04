@@ -2,7 +2,12 @@
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state';
 import { ERAS } from '@/lib/constants';
-import { signOut } from '@/lib/auth';
+
+const REGIONS = [
+  { eraNum:1, x:20, y:55, color:'#d4912a', bg:'#fef6e8', icon:'🔊', name:'Sound World', desc:'捕捉纯粹的声音碎片' },
+  { eraNum:2, x:50, y:30, color:'#2d8a7b', bg:'#eaf7f4', icon:'🔗', name:'Sound Machine', desc:'将碎片焊合成新单元' },
+  { eraNum:3, x:78, y:55, color:'#6b5b8a', bg:'#f2eff7', icon:'🔤', name:'Alphabet Revolution', desc:'为声音赋予文字符号' },
+];
 
 const REGIONS = [
   { eraNum:1, x:20, y:55, color:'#d4912a', bg:'#fef6e8', icon:'🔊', name:'Sound World', desc:'捕捉纯粹的声音碎片' },
@@ -11,7 +16,7 @@ const REGIONS = [
 ];
 
 export default function EraSelectPage() {
-  const r = useRouter(); const { unlockedEras, completedLevels, isAdmin, username, setScreen } = useGameStore();
+  const r = useRouter(); const { unlockedEras, completedLevels, isAdmin, setScreen } = useGameStore();
   const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); r.push(`/level-select?era=${n}`); };
 
   return (
@@ -44,14 +49,14 @@ export default function EraSelectPage() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="font-display text-base font-bold text-[#2c2416]">{username || '探险者'}</span>
-          {isAdmin && <span className="text-[10px] bg-[#6b5b8a]/10 text-[#6b5b8a] px-2 py-0.5 rounded-full font-bold">ADMIN</span>}
+          <span className="font-display text-base font-bold text-[#2c2416]">管理员</span>
+          <span className="text-[10px] bg-[#6b5b8a]/10 text-[#6b5b8a] px-2 py-0.5 rounded-full font-bold">ADMIN</span>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={()=>{r.push('/journal');}} className="text-xs text-[#5c4f3a]/60 hover:text-[#2c2416] transition-colors font-medium flex items-center gap-1">
             <span>📖</span> 图鉴
           </button>
-          <button onClick={async()=>{await signOut();setScreen('splash');r.push('/');}} className="text-xs text-[#5c4f3a]/50 hover:text-[#2c2416] transition-colors">离开</button>
+          <button onClick={()=>{setScreen('splash');r.push('/');}} className="text-xs text-[#5c4f3a]/50 hover:text-[#2c2416] transition-colors">离开</button>
         </div>
       </div>
 

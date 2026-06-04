@@ -1,80 +1,40 @@
-// Supabase 进度持久化
+// 本地 localStorage 进度持久化
 
-import { createClient } from './supabase/client';
+const PROGRESS_KEY = 'phonics_progress';
 
-export async function saveProgress(
+interface StoredProgress {
+  completedLevels: string[];
+  levelStars: Record<string, number>;
+}
+
+function readProgress(): StoredProgress {
+  if (typeof window === 'undefined') return { completedLevels: [], levelStars: {} };
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    return raw ? JSON.parse(raw) : { completedLevels: [], levelStars: {} };
+  } catch {
+    return { completedLevels: [], levelStars: {} };
+  }
+}
+
+function writeProgress(data: StoredProgress) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+}
+
+export function saveProgress(
   levelId: string,
   stars: number,
-  completionData: Record<string, unknown> = {}
+  _completionData: Record<string, unknown> = {}
 ) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase.from('user_progress').upsert(
-    {
-      user_id: user.id,
-      level_id: levelId,
-      completed: true,
-      stars,
-      completion_data: completionData,
-      completed_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,level_id' }
-  );
+  const progress = readProgress();
+  if (!progress.completedLevels.includes(levelId)) {
+    progress.completedLevels.push(levelId);
+  }
+  progress.levelStars[levelId] = Math.max(progress.levelStars[levelId] || 0, stars);
+  writeProgress(progress);
 }
 
-export async function loadProgress() {
-  // DEV BYPASS — return empty progress (local only)
-  return { completedLevels: [], levelStars: {} };
-}
-
-// 关卡快照读写
-export async function saveSnapshot(
-  levelId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  snapshotData: any,
-  elapsedSec: number
-) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase.from('level_snapshots').upsert(
-    {
-      user_id: user.id,
-      level_id: levelId,
-      snapshot_data: snapshotData,
-      elapsed_sec: elapsedSec,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,level_id' }
-  );
-}
-
-export async function loadSnapshot(levelId: string) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from('level_snapshots')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('level_id', levelId)
-    .maybeSingle();
-
-  return data ?? null;
-}
-
-export async function deleteSnapshot(levelId: string) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase
-    .from('level_snapshots')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('level_id', levelId);
+export function loadProgress(): StoredProgress {
+  return readProgress();
 }

@@ -1,12 +1,12 @@
 'use client';
 import { useRouter } from 'next/navigation'; import { useGameStore } from '@/lib/game-state';
-import { useEffect, useState } from 'react'; import { getCurrentUser } from '@/lib/auth';
+import { useEffect, useState } from 'react';
 
 const STEPS = ['声音 Sound','音素 Phoneme','字母 Glyph','拼读 Blend','规则 Rule','阅读 Read'];
 
 export default function Home() {
   const r = useRouter(); const { setScreen } = useGameStore(); const [v, setV] = useState(false);
-  useEffect(() => { getCurrentUser().then(u => { if (u) { setScreen('era-map'); r.push('/era-select'); } }); requestAnimationFrame(() => setV(true)); }, []);
+  useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
 
   return (
     <div className="flex items-center justify-center h-full paper-texture" style={{ background: 'linear-gradient(165deg, #fdf8f0 0%, #f5ede0 40%, #efe5d2 100%)' }}>

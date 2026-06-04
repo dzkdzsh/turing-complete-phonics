@@ -1,20 +1,17 @@
 'use client';
 import { Suspense } from 'react'; import { useRouter, useSearchParams } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state'; import { ERAS } from '@/lib/constants';
-import { useEffect, useState } from 'react'; import { loadSnapshot } from '@/lib/progress';
 
 const L:Record<number,{id:string;title:string;boss:boolean}[]>={
-  1:[{id:'001-discover-m',title:'发现 /m/',boss:false},{id:'002-discover-s',title:'发现 /s/',boss:false},{id:'001b-discover-n',title:'发现 /n/',boss:false},{id:'003-sound-match',title:'回声匹配',boss:false},{id:'004-sound-lab',title:'声音实验室',boss:false},{id:'005-boss-sounds',title:'共振试炼',boss:true}],
-  2:[{id:'006-blend-ma',title:'合成 /ma/',boss:false},{id:'007-blend-sa',title:'合成 /sa/',boss:false},{id:'008-blend-kat',title:'三重合成',boss:false},{id:'006a-blend-sh',title:'发现 /sh/ ✨',boss:false}],
+  1:[{id:'001-discover-m',title:'发现 /m/',boss:false},{id:'002-discover-s',title:'发现 /s/',boss:false},{id:'003-sound-match',title:'回声匹配',boss:false},{id:'004-sound-lab',title:'声音实验室',boss:false},{id:'005-boss-sounds',title:'共振试炼',boss:true}],
+  2:[{id:'006-blend-ma',title:'合成 /ma/',boss:false},{id:'007-blend-sa',title:'合成 /sa/',boss:false},{id:'008-blend-kat',title:'三重合成',boss:false}],
   3:[{id:'009-invent-m',title:'发明字母 M',boss:false},{id:'010-encoding-board',title:'编码矩阵',boss:false}],
 };
 
 function C(){
   const r=useRouter();const sp=useSearchParams();const n=Number(sp.get('era'))||1;
-  const{isAdmin,unlockedLevels,completedLevels,levelStars,username,setCurrentLevel,setScreen}=useGameStore();
+  const{isAdmin,unlockedLevels,completedLevels,levelStars,setCurrentLevel,setScreen}=useGameStore();
   const era=ERAS[n as keyof typeof ERAS];const lvs=L[n]||[];
-  const[rs,setRs]=useState<Set<string>>(new Set());
-  useEffect(()=>{(async()=>{const s=new Set<string>();for(const l of lvs){try{const d=await loadSnapshot(l.id);if(d)s.add(l.id)}catch{}}setRs(s);})();},[n]);
 
   const unl=(id:string)=>isAdmin||unlockedLevels.includes(id);
   const comp=(id:string)=>completedLevels.includes(id);
@@ -30,7 +27,7 @@ function C(){
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           返回地图
         </button>
-        <span className="text-xs text-[#9b8c78] font-medium">{username||'探险者'}</span>
+        <span className="text-xs text-[#9b8c78] font-medium">管理员</span>
       </div>
 
       {/* Era header */}
@@ -52,7 +49,6 @@ function C(){
                 {String(i+1).padStart(2,'0')}
               </div>
               <div className="flex items-center gap-1">
-                {rs.has(lv.id) && <div className="w-2 h-2 rounded-full bg-[#2d8a7b]" style={{boxShadow:'0 0 6px rgba(45,138,123,0.3)'}} />}
                 {lv.boss && <span className="tag tag-amber" style={{fontSize:'0.55rem'}}>BOSS</span>}
               </div>
             </div>
