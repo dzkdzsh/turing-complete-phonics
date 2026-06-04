@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
@@ -21,7 +22,7 @@ async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
   } catch { return null; }
 }
 
-export default function BossPage() {
+function BossPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const levelId = searchParams.get('level') || '005-boss-sounds';
@@ -70,5 +71,13 @@ export default function BossPage() {
         introText={config.introText} victoryText={config.victoryText}
         mechanicHint="点击水晶 → 对着麦克风发出对应的声音" onExit={handleExit} />
     </GameLayout>
+  );
+}
+
+export default function BossPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen bg-[#1a1814]"><p className="text-[#8b7355]">加载中...</p></div>}>
+      <BossPageContent />
+    </Suspense>
   );
 }
