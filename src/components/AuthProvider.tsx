@@ -1,60 +1,72 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
-import { useGameStore } from '@/lib/game-state';
 import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useGameStore } from '@/lib/game-state';
+import { getCurrentUser, getUserProfile } from '@/lib/auth';
+import { loadProgress } from '@/lib/progress';
+
+// 不需要登录即可访问的路由
+const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/register'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, loadProgress: loadStoreProgress } = useGameStore();
+  const pathname = usePathname();
+  const router = useRouter();
+  const {
+    userId,
+    setUser,
+    setIsAdmin,
+    setUsername,
+    loadProgress: loadStoreProgress,
+  } = useGameStore();
 
   useEffect(() => {
-    const initAuth = async () => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (!supabaseUrl || supabaseUrl.includes('your-project')) {
-        console.log('[Auth] Supabase 未配置，使用离线模式');
+    const checkAuth = async () => {
+      const isPublic = PUBLIC_ROUTES.includes(pathname);
+      const user = await getCurrentUser();
+
+      if (!user) {
+        // 未登录时，只允许访问公开路由
+        if (!isPublic) {
+          router.replace('/auth/login');
+        }
         return;
       }
 
+      // 已登录，更新 store
+      setUser(user.id, false);
+
+      // 读取用户档案（管理员检测）
+      const profile = await getUserProfile(user.id);
+      if (profile) {
+        setIsAdmin(profile.is_admin ?? false);
+        setUsername(profile.username ?? '');
+      }
+
+      // 加载云端进度
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (error || !data.user) {
-          console.error('匿名登录失败:', error?.message);
-          return;
-        }
-
-        const userId = data.user.id;
-        setUser(userId, data.user.is_anonymous ?? true);
-
-        const { data: progress } = await supabase
-          .from('user_progress')
-          .select('*')
-          .eq('user_id', userId);
-
+        const progress = await loadProgress();
         if (progress) {
-          const completedLevels: string[] = [];
-          const levelStars: Record<string, number> = {};
-          for (const row of progress) {
-            if (row.completed) {
-              completedLevels.push(row.level_id);
-              levelStars[row.level_id] = row.stars || 0;
-            }
-          }
           loadStoreProgress({
-            completedLevels,
-            levelStars,
-            unlockedLevels: buildUnlockedList(completedLevels),
-            unlockedEras: buildUnlockedEras(completedLevels),
+            completedLevels: progress.completedLevels,
+            levelStars: progress.levelStars,
+            unlockedLevels: buildUnlockedList(progress.completedLevels),
+            unlockedEras: buildUnlockedEras(progress.completedLevels),
           });
         }
       } catch {
-        console.log('[Auth] 无法连接 Supabase，使用离线模式');
+        // 加载失败不影响使用
+      }
+
+      // 如果已登录但访问公开路由，跳转时代地图
+      if (isPublic) {
+        router.replace('/era-select');
       }
     };
 
-    initAuth();
+    checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname]);
 
   return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-// GameplayScene —— 核心游玩场景：支持 Era 1 + Era 2 + Era 3 全部机制
+// GameplayScene —— 核心游玩场景：支持 Era 1-3 + 快照
 
 import * as Phaser from 'phaser';
 import { eventBus } from '../event-bus';
@@ -9,6 +9,9 @@ import { createGameObject } from '../objects/GameObjectFactory';
 import { DragDropSystem } from '../systems/DragDropSystem';
 import { ConnectionSystem } from '../systems/ConnectionSystem';
 import { WinConditionSystem } from '../systems/WinConditionSystem';
+import { SnapshotSystem } from '../systems/SnapshotSystem';
+import { setActiveScene } from '../level-config-store';
+import type { LevelSnapshotData } from '../systems/SnapshotSystem';
 import { SoundCreature } from '../objects/SoundCreature';
 import { Resonator } from '../objects/Resonator';
 import { TargetZone } from '../objects/TargetZone';
@@ -17,6 +20,7 @@ import { BlenderNode } from '../objects/BlenderNode';
 import { AlphabetTile } from '../objects/AlphabetTile';
 import { PhonemeLibrary } from '../audio/PhonemeLibrary';
 import { AudioManager } from '../audio/AudioManager';
+import type { GameObj } from '../objects/GameObjectFactory';
 
 export class GameplayScene extends Phaser.Scene {
   protected levelConfig!: LevelConfig;
@@ -27,7 +31,8 @@ export class GameplayScene extends Phaser.Scene {
   protected mouthShapeButtons: MouthShapeButton[] = [];
   protected blenderNodes: BlenderNode[] = [];
   protected alphabetTiles: AlphabetTile[] = [];
-  protected gameObjects: (SoundCreature | Resonator | TargetZone | MouthShapeButton | BlenderNode | AlphabetTile)[] = [];
+  protected gameObjects: GameObj[] = [];
+  protected completedPhonemes: string[] = [];
 
   constructor(sceneKey: string = SCENES.GAMEPLAY) {
     super({ key: sceneKey });
@@ -45,6 +50,7 @@ export class GameplayScene extends Phaser.Scene {
     this.blenderNodes = [];
     this.alphabetTiles = [];
     this.gameObjects = [];
+    this.completedPhonemes = [];
 
     this.phonemeLibrary = new PhonemeLibrary();
     this.phonemeLibrary.loadFromConfig(this.levelConfig.audioClips);
@@ -81,6 +87,14 @@ export class GameplayScene extends Phaser.Scene {
 
     eventBus.emit(GameEvents.SCENE_READY, { sceneKey: SCENES.GAMEPLAY });
     eventBus.emit(GameEvents.LEVEL_LOADED, { levelId: this.levelConfig.levelId });
+
+    // 注册场景引用（供 React 层调用 captureSnapshot / restoreSnapshot）
+    setActiveScene(this);
+  }
+
+  /** 场景销毁时清理引用 */
+  shutdown() {
+    setActiveScene(null);
   }
 
   protected spawnObjects() {
@@ -109,6 +123,68 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
+  /** 捕获当前状态快照 */
+  captureSnapshot(elapsedSec = 0): LevelSnapshotData {
+    return SnapshotSystem.capture({
+      gameObjects: this.gameObjects,
+      connectionSystem: this.connectionSystem,
+      completedPhonemes: this.completedPhonemes,
+      elapsedSec,
+      attemptCount: 0,
+    });
+  }
+
+  /** 从快照恢复游戏状态 */
+  restoreSnapshot(data: LevelSnapshotData) {
+    if (!data?.objects) return;
+
+    for (const obj of this.gameObjects) {
+      const state = data.objects[obj.objectId];
+      if (!state) continue;
+
+      // 恢复位置
+      if (state.x !== undefined && 'x' in obj) {
+        (obj as Phaser.GameObjects.Container).x = state.x;
+      }
+      if (state.y !== undefined && 'y' in obj) {
+        (obj as Phaser.GameObjects.Container).y = state.y;
+      }
+
+      // 恢复特定状态
+      if (state.isActivated && obj instanceof Resonator && !obj.isActivated) {
+        obj.activate(obj.phoneme);
+      }
+      if (state.isFilled && obj instanceof TargetZone && !obj.isFilled) {
+        obj.isFilled = true;
+        obj.highlight();
+      }
+      if (state.isRevealed && obj instanceof AlphabetTile && !obj.isRevealed) {
+        obj.reveal(obj.phoneme || '');
+      }
+      if (state.hasBeenClicked && obj instanceof MouthShapeButton && !obj.hasBeenClicked) {
+        obj.hasBeenClicked = true;
+      }
+    }
+
+    // 恢复连线
+    if (data.connections?.length > 0) {
+      for (const conn of data.connections) {
+        const source = this.gameObjects.find((o) => o.objectId === conn.fromNodeId) as SoundCreature | undefined;
+        const blender = this.gameObjects.find((o) => o.objectId === conn.toNodeId) as BlenderNode | undefined;
+        if (source && blender) {
+          blender.connectPhoneme(conn.toPortId, source.phoneme);
+        }
+      }
+    }
+
+    // 恢复 Boss 关音素
+    if (data.completedPhonemes) {
+      this.completedPhonemes = data.completedPhonemes;
+    }
+
+    console.log('[GameplayScene] 快照恢复完成');
+  }
+
   private getMechanicHint(): string {
     switch (this.levelConfig.mechanicType) {
       case 'drag_to_resonate':
@@ -116,7 +192,7 @@ export class GameplayScene extends Phaser.Scene {
       case 'sound_match':
         return '点击左边生物听声音 → 拖拽右边影子生物到匹配区';
       case 'sound_lab':
-        return '点击每个口型按钮，试听不同的声音——全部试一遍！';
+        return '点击每个口型按钮，试听所有的声音——全部试一遍！';
       case 'connect_and_blend':
       case 'multi_blend':
         return '点击声音节点的输出端口（小圆点）→ 再点击合成器的输入端口完成连线';

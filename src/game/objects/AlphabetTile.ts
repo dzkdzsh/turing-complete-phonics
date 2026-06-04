@@ -6,6 +6,7 @@ import { AudioManager } from '../audio/AudioManager';
 
 export class AlphabetTile extends Phaser.GameObjects.Container {
   public objectId: string;
+  public phoneme = '';
   public targetPhoneme: string | null = null;
   public letterSymbol: string;
   public isRevealed = false;
@@ -26,6 +27,7 @@ export class AlphabetTile extends Phaser.GameObjects.Container {
 
     // 如果有 phoneme 字段，说明是 invent_letter 类型（音素→字母映射）
     if (def.phoneme) {
+      this.phoneme = def.phoneme;
       this.targetPhoneme = def.phoneme;
     }
 

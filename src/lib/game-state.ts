@@ -14,8 +14,11 @@ export type ScreenState =
 interface GameStore {
   // 认证
   userId: string | null;
-  isAnonymous: boolean;
+  isAdmin: boolean;
+  username: string;
   setUser: (userId: string, isAnonymous: boolean) => void;
+  setIsAdmin: (isAdmin: boolean) => void;
+  setUsername: (username: string) => void;
 
   // 导航
   currentEra: number | null;
@@ -52,8 +55,11 @@ interface GameStore {
 export const useGameStore = create<GameStore>((set) => ({
   // 认证
   userId: null,
-  isAnonymous: true,
-  setUser: (userId, isAnonymous) => set({ userId, isAnonymous }),
+  isAdmin: false,
+  username: '',
+  setUser: (userId) => set({ userId }),
+  setIsAdmin: (isAdmin) => set({ isAdmin }),
+  setUsername: (username) => set({ username }),
 
   // 导航
   currentEra: null,

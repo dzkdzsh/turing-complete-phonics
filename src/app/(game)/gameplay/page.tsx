@@ -1,11 +1,13 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { storeLevelConfig } from '@/game/level-config-store';
+import { storeLevelConfig, storePendingSnapshot, getActiveScene } from '@/game/level-config-store';
+import { loadSnapshot, saveSnapshot } from '@/lib/progress';
 import type { LevelConfig } from '@/types/level';
+import type { LevelSnapshotData } from '@/game/systems/SnapshotSystem';
 
 const configCache: Record<string, LevelConfig> = {};
 
@@ -15,10 +17,7 @@ async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
     const mod = await import(`@/data/levels/${levelId}.json`);
     configCache[levelId] = mod.default || mod;
     return configCache[levelId];
-  } catch {
-    console.error(`无法加载关卡配置: ${levelId}`);
-    return null;
-  }
+  } catch { return null; }
 }
 
 const mechanicHints: Record<string, string> = {
@@ -37,18 +36,47 @@ export default function GameplayPage() {
   const levelId = searchParams.get('level') || '001-discover-m';
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const elapsedRef = useRef(0);
+  const hasSnapRef = useRef(false);
 
+  // 计时器（用于快照的时间戳）
+  useEffect(() => {
+    const t = setInterval(() => elapsedRef.current++, 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 加载配置 + 快照
   useEffect(() => {
     setLoading(true);
-    loadLevelConfig(levelId).then((cfg) => {
+    hasSnapRef.current = false;
+
+    (async () => {
+      const cfg = await loadLevelConfig(levelId);
       if (cfg) {
-        // 先写入共享存储，再触发渲染。
-        // PreloadScene.create() 在 Phaser 启动时被调用，会从 store 中 consume 配置。
         storeLevelConfig(levelId, cfg);
       }
+      // 加载快照
+      try {
+        const snap = await loadSnapshot(levelId);
+        if (snap?.snapshot_data) {
+          storePendingSnapshot(snap.snapshot_data as LevelSnapshotData);
+          hasSnapRef.current = true;
+        }
+      } catch { /* ignore */ }
       setConfig(cfg);
       setLoading(false);
-    });
+    })();
+  }, [levelId]);
+
+  // 退出时自动保存快照
+  const handleExit = useCallback(async () => {
+    const scene = getActiveScene();
+    if (scene) {
+      const data = scene.captureSnapshot(elapsedRef.current);
+      try {
+        await saveSnapshot(levelId, data, elapsedRef.current);
+      } catch { /* ignore */ }
+    }
   }, [levelId]);
 
   if (loading || !config) {
@@ -70,6 +98,7 @@ export default function GameplayPage() {
         introText={config.introText}
         victoryText={config.victoryText}
         mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'}
+        onExit={handleExit}
       />
     </GameLayout>
   );

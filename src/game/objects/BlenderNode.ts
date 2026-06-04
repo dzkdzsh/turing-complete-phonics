@@ -16,6 +16,7 @@ export interface BlenderPort {
 
 export class BlenderNode extends Phaser.GameObjects.Container {
   public objectId: string;
+  public phoneme = '';
   public ports: BlenderPort[] = [];
 
   private bgRect: Phaser.GameObjects.Rectangle;
