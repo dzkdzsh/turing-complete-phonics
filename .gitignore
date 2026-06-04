@@ -46,6 +46,3 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
-
-# Build output
-/dist

@@ -9,12 +9,6 @@ const REGIONS = [
   { eraNum:3, x:78, y:55, color:'#6b5b8a', bg:'#f2eff7', icon:'🔤', name:'Alphabet Revolution', desc:'为声音赋予文字符号' },
 ];
 
-const REGIONS = [
-  { eraNum:1, x:20, y:55, color:'#d4912a', bg:'#fef6e8', icon:'🔊', name:'Sound World', desc:'捕捉纯粹的声音碎片' },
-  { eraNum:2, x:50, y:30, color:'#2d8a7b', bg:'#eaf7f4', icon:'🔗', name:'Sound Machine', desc:'将碎片焊合成新单元' },
-  { eraNum:3, x:78, y:55, color:'#6b5b8a', bg:'#f2eff7', icon:'🔤', name:'Alphabet Revolution', desc:'为声音赋予文字符号' },
-];
-
 export default function EraSelectPage() {
   const r = useRouter(); const { unlockedEras, completedLevels, isAdmin, setScreen } = useGameStore();
   const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); r.push(`/level-select?era=${n}`); };
