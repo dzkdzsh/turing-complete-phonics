@@ -15,7 +15,12 @@ export function createGameConfig(
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     parent,
-    backgroundColor: '#1a1814',
+    backgroundColor: '#f5f3f0',
+    render: {
+      antialias: true,
+      pixelArt: false,
+      roundPixels: true,
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,

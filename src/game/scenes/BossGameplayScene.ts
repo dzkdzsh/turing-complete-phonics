@@ -1,4 +1,4 @@
-// BossGameplayScene —— Boss 关场景（集成麦克风音素验证 + 快照恢复）
+// BossGameplayScene —— Boss 关场景（集成麦克风音素验证）
 
 import * as Phaser from 'phaser';
 import { SCENES } from '@/lib/constants';
@@ -49,12 +49,6 @@ export class BossGameplayScene extends GameplayScene {
 
     eventBus.on(GameEvents.MIC_START, () => this.startMicForNext());
     eventBus.on(GameEvents.MIC_STOP, () => this.mic?.stop());
-
-    // 恢复 Boss 关快照
-    if (this.completedPhonemes.length > 0) {
-      for (const p of this.completedPhonemes) this.lightCrystal(p);
-      this.showStatus(`已恢复 ${this.completedPhonemes.length}/${this.requiredPhonemes.length} 颗水晶`, '#10b981');
-    }
   }
 
   private createCrystalLights() {
@@ -80,7 +74,7 @@ export class BossGameplayScene extends GameplayScene {
 
   private onCrystalClick(phoneme: string, objectId: string) {
     if (this.completedPhonemes.includes(phoneme)) {
-      this.showStatus(`/"${phoneme}"/水晶已激活 ✓ 试试下一颗`, '#10b981');
+      this.showStatus(`/${phoneme}/水晶已激活 ✓ 试试下一颗`, '#10b981');
       return;
     }
     this.currentTarget = phoneme;

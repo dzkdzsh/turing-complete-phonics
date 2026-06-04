@@ -12,13 +12,8 @@ export type ScreenState =
   | 'victory';
 
 interface GameStore {
-  // 认证
-  userId: string | null;
+  // 管理员身份（开发阶段始终为 true）
   isAdmin: boolean;
-  username: string;
-  setUser: (userId: string) => void;
-  setIsAdmin: (isAdmin: boolean) => void;
-  setUsername: (username: string) => void;
 
   // 导航
   currentEra: number | null;
@@ -53,13 +48,8 @@ interface GameStore {
 }
 
 export const useGameStore = create<GameStore>((set) => ({
-  // 认证
-  userId: null,
-  isAdmin: false,
-  username: '',
-  setUser: (userId) => set({ userId }),
-  setIsAdmin: (isAdmin) => set({ isAdmin }),
-  setUsername: (username) => set({ username }),
+  // 管理员身份（开发阶段始终为 true）
+  isAdmin: true,
 
   // 导航
   currentEra: null,

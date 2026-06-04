@@ -56,8 +56,5 @@ export function getAdminInventoryForLevel(levelId: string) {
   return getUnlocksUpTo(prevLevelId);
 }
 
-/** 检查关卡是否有"继续"快照（调用 Supabase） */
-export { loadSnapshot, saveSnapshot, deleteSnapshot } from './progress';
-
 /** 全部 10 关 */
 export { LEVEL_ORDER };

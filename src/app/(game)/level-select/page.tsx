@@ -1,112 +1,80 @@
 'use client';
+import { Suspense } from 'react'; import { useRouter, useSearchParams } from 'next/navigation';
+import { useGameStore } from '@/lib/game-state'; import { ERAS } from '@/lib/constants';
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useGameStore } from '@/lib/game-state';
-import { ERAS } from '@/lib/constants';
-import { useEffect, useState } from 'react';
-import { loadSnapshot } from '@/lib/progress';
-
-const LEVEL_PREVIEWS: Record<number, { id: string; title: string; isBoss: boolean }[]> = {
-  1: [
-    { id: '001-discover-m', title: '奇怪的声音', isBoss: false },
-    { id: '002-discover-s', title: '嘶嘶的声音', isBoss: false },
-    { id: '003-sound-match', title: '声音匹配', isBoss: false },
-    { id: '004-sound-lab', title: '声音实验室', isBoss: false },
-    { id: '005-boss-sounds', title: '声音大师试炼', isBoss: true },
-  ],
-  2: [
-    { id: '006-blend-ma', title: '合成 /ma/', isBoss: false },
-    { id: '007-blend-sa', title: '合成 /sa/', isBoss: false },
-    { id: '008-blend-kat', title: '三个声音的合成', isBoss: false },
-  ],
-  3: [
-    { id: '009-invent-m', title: '发明第一个字母', isBoss: false },
-    { id: '010-encoding-board', title: '建造编码板', isBoss: false },
-  ],
+const L:Record<number,{id:string;title:string;boss:boolean}[]>={
+  1:[{id:'001-discover-m',title:'发现 /m/',boss:false},{id:'002-discover-s',title:'发现 /s/',boss:false},{id:'003-sound-match',title:'回声匹配',boss:false},{id:'004-sound-lab',title:'声音实验室',boss:false},{id:'005-boss-sounds',title:'共振试炼',boss:true}],
+  2:[{id:'006-blend-ma',title:'合成 /ma/',boss:false},{id:'007-blend-sa',title:'合成 /sa/',boss:false},{id:'008-blend-kat',title:'三重合成',boss:false}],
+  3:[{id:'009-invent-m',title:'发明字母 M',boss:false},{id:'010-encoding-board',title:'编码矩阵',boss:false}],
 };
 
-function LevelSelectContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const eraNum = Number(searchParams.get('era')) || 1;
+function C(){
+  const r=useRouter();const sp=useSearchParams();const n=Number(sp.get('era'))||1;
+  const{isAdmin,unlockedLevels,completedLevels,levelStars,setCurrentLevel,setScreen}=useGameStore();
+  const era=ERAS[n as keyof typeof ERAS];const lvs=L[n]||[];
 
-  const { isAdmin, unlockedLevels, completedLevels, levelStars, username, setCurrentLevel, setScreen } = useGameStore();
-  const era = ERAS[eraNum as keyof typeof ERAS];
-  const levels = LEVEL_PREVIEWS[eraNum] || [];
-
-  const [resumableLevels, setResumableLevels] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    (async () => {
-      const resumable = new Set<string>();
-      for (const lvl of levels) {
-        try { const snap = await loadSnapshot(lvl.id); if (snap) resumable.add(lvl.id); } catch { /* */ }
-      }
-      setResumableLevels(resumable);
-    })();
-  }, [eraNum]);
-
-  const isUnlocked = (id: string) => isAdmin || unlockedLevels.includes(id);
-  const isCompleted = (id: string) => completedLevels.includes(id);
-  const getStars = (id: string) => levelStars[id] || 0;
-
-  const handleLevelClick = (levelId: string, isBoss: boolean) => {
-    setCurrentLevel(levelId);
-    setScreen(isBoss ? 'boss' : 'gameplay');
-    router.push(`/${isBoss ? 'boss' : 'gameplay'}?level=${levelId}`);
-  };
-
-  const handleLogout = async () => {
-    const { signOut } = await import('@/lib/auth');
-    await signOut(); setScreen('splash'); router.push('/');
-  };
+  const unl=(id:string)=>isAdmin||unlockedLevels.includes(id);
+  const comp=(id:string)=>completedLevels.includes(id);
+  const st=(id:string)=>levelStars[id]||0;
+  const go=(id:string,boss:boolean)=>{if(!unl(id))return;setCurrentLevel(id);setScreen(boss?'boss':'gameplay');r.push(`/${boss?'boss':'gameplay'}?level=${id}`);};
+  const color = n===1?'#d4912a':n===2?'#2d8a7b':'#6b5b8a';
 
   return (
-    <div className="flex flex-col items-center h-full bg-[#1a1814] p-8 overflow-auto">
-      <div className="w-full max-w-2xl flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-[#c9a96e] text-sm">{username || '未知用户'}</span>
-          {isAdmin && <span className="text-xs bg-[#e64980]/20 text-[#e64980] px-2 py-0.5 rounded-full">管理员</span>}
-        </div>
-        <button onClick={handleLogout} className="text-xs text-[#555] hover:text-[#8b7355] transition-colors">退出登录</button>
+    <div className="flex flex-col items-center min-h-full p-6 overflow-auto paper-texture" style={{ background: 'linear-gradient(180deg, #fdf8f0 0%, #f5ede0 50%, #efe5d2 100%)' }}>
+      {/* Top bar */}
+      <div className="w-full max-w-2xl flex items-center justify-between mb-8 animate-in">
+        <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="flex items-center gap-1.5 text-sm text-[#5c4f3a] hover:text-[#2c2416] transition-colors font-medium">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          返回地图
+        </button>
+        <span className="text-xs text-[#9b8c78] font-medium">管理员</span>
       </div>
 
-      <div className="w-3 h-3 rounded-full mb-2" style={{ backgroundColor: era?.color || '#c9a96e' }} />
-      <h2 className="text-2xl font-bold text-[#c9a96e] mb-1">{era?.name || `Era ${eraNum}`}</h2>
-      <p className="text-[#8b7355] text-sm mb-6">{era?.description}</p>
+      {/* Era header */}
+      <div className="text-center mb-10 animate-in anim-d1">
+        <div className="w-3 h-3 rounded-full mx-auto mb-4" style={{ backgroundColor:color, boxShadow:`0 0 14px ${color}30` }} />
+        <h2 className="font-display text-2xl font-bold text-[#2c2416] mb-1.5">{era?.name}</h2>
+        <p className="text-sm text-[#5c4f3a]/70 max-w-sm leading-relaxed">{era?.description}</p>
+      </div>
 
-      <div className="flex gap-3 flex-wrap justify-center max-w-2xl">
-        {levels.map((level) => {
-          const unlocked = isUnlocked(level.id);
-          const completed = isCompleted(level.id);
-          const stars = getStars(level.id);
-          const canResume = resumableLevels.has(level.id);
-          return (
-            <button key={level.id} onClick={() => handleLevelClick(level.id, level.isBoss)} disabled={!unlocked}
-              className={`w-44 p-4 rounded-lg border transition-all duration-200 text-center
-                ${unlocked ? 'border-[#c9a96e]/30 hover:border-[#c9a96e] hover:scale-105 bg-[#2a2520] cursor-pointer' : 'border-[#333] bg-[#1a1814] opacity-40 cursor-not-allowed'}
-                ${completed ? 'border-green-700/50' : ''}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-[#8b7355]">#{level.id.split('-')[0]}</span>
-                <div className="flex items-center gap-1">
-                  {canResume && <span className="text-xs text-[#06b6d4]">继续</span>}
-                  {level.isBoss && <span className="text-xs text-[#e64980]">★Boss</span>}
-                </div>
+      {/* Level cards — specimen collection grid */}
+      <div className="flex gap-4 flex-wrap justify-center max-w-2xl">
+        {lvs.map((lv,i)=>(
+          <button key={lv.id} onClick={()=>go(lv.id,lv.boss)} disabled={!unl(lv.id)}
+            className={`relative w-[11rem] p-5 rounded-2xl text-left transition-all duration-300 animate-in ${unl(lv.id)?'card-specimen cursor-pointer':'bg-white/30 opacity-40 cursor-not-allowed rounded-2xl'}`}
+            style={{animationDelay:`${0.1+i*0.06}s`}}>
+            {/* Pin / number */}
+            <div className="flex items-start justify-between mb-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold ${comp(lv.id)?'bg-[#4a8c5c]/10 text-[#4a8c5c]':unl(lv.id)?'text-[#2c2416] bg-[#2c2416]/[0.03]':'text-[#c4b89a] bg-[#c4b89a]/20'}`}>
+                {String(i+1).padStart(2,'0')}
               </div>
-              <p className="text-[#e8e0d0] text-sm font-medium">{level.title}</p>
-              {completed && (<div className="flex justify-center gap-1 mt-2">{[1,2,3].map(s=><span key={s} className={`text-xs ${s<=stars?'text-[#c9a96e]':'text-[#555]'}`}>★</span>)}</div>)}
-              {!unlocked && <p className="text-xs text-[#555] mt-2">🔒 未解锁</p>}
-              {unlocked && completed && <p className="text-xs text-[#10b981] mt-1">✓ 已通关</p>}
-            </button>
-          );
-        })}
+              <div className="flex items-center gap-1">
+                {lv.boss && <span className="tag tag-amber" style={{fontSize:'0.55rem'}}>BOSS</span>}
+              </div>
+            </div>
+
+            {/* Title */}
+            <p className={`text-sm font-semibold leading-snug mb-3 ${unl(lv.id)?'text-[#2c2416]':'text-[#9b8c78]'}`}>{lv.title}</p>
+
+            {/* Status */}
+            {comp(lv.id) ? (
+              <div className="flex gap-1.5">
+                {[1,2,3].map(s=>(
+                  <svg key={s} width="14" height="14" viewBox="0 0 16 16" className={s<=st(lv.id)?'text-[#d4912a]':'text-[#e0d6c4]'}>
+                    <path d="M8 1l2 4.5L15 6l-3.5 3L12.5 15 8 12.5 3.5 15 5 9 1.5 6 6 5.5z" fill="currentColor"/>
+                  </svg>
+                ))}
+              </div>
+            ) : unl(lv.id) ? (
+              <span className="text-[10px] text-[#2d8a7b] font-medium tracking-wide">▸ 进入</span>
+            ) : (
+              <span className="text-[10px] text-[#c4b89a]">🔒</span>
+            )}
+          </button>
+        ))}
       </div>
-      {levels.length === 0 && <p className="text-[#8b7355]">该时代暂无可用关卡</p>}
-      <button onClick={() => { setScreen('era-map'); router.push('/era-select'); }} className="mt-8 px-6 py-2 text-[#8b7355] hover:text-[#c9a96e] transition-colors text-sm">← 返回时代地图</button>
     </div>
   );
 }
 
-export default function LevelSelectPage() {
-  return (<Suspense fallback={<div className="flex items-center justify-center h-screen bg-[#1a1814]"><p className="text-[#8b7355]">加载中...</p></div>}><LevelSelectContent /></Suspense>);
-}
+export default function P(){return(<Suspense fallback={<div className="flex items-center justify-center h-screen" style={{background:'#fdf8f0'}}><div className="shimmer w-24 h-2 rounded-full"/></div>}><C/></Suspense>);}
