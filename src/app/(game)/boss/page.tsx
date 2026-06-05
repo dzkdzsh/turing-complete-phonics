@@ -1,11 +1,11 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { storeLevelConfig } from '@/game/level-config-store';
+import { storeLevelConfig, clearLevelConfig } from '@/game/level-config-store';
 import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 
@@ -22,11 +22,12 @@ async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
 
 function BossPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const levelId = searchParams.get('level') || '005-boss-sounds';
   const { setScreen } = useGameStore();
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { clearLevelConfig(); }, [levelId]);
 
   useEffect(() => {
     setLoading(true);
@@ -38,19 +39,17 @@ function BossPageContent() {
     })();
   }, [levelId]);
 
-  // 配置就绪后通知 Phaser PreloadScene
-  useEffect(() => {
-    if (config) {
-      import('@/game/event-bus').then(m => {
-        m.eventBus.emit('cmd:start-level', { levelId, config });
-      });
-    }
-  }, [config, levelId]);
-
   const handleExit = useCallback(() => {
     setScreen('level-select');
-    router.push('/level-select?era=1');
-  }, [setScreen, router]);
+    clearLevelConfig();
+    window.location.href='/level-select?era=1';
+  }, [setScreen]);
+
+  const handleBackToMap = useCallback(() => {
+    setScreen('era-map');
+    clearLevelConfig();
+    window.location.href='/era-select';
+  }, [setScreen]);
 
   if (loading || !config) {
     return (
@@ -64,7 +63,7 @@ function BossPageContent() {
     <GameLayout levelKey={levelId}>
       <HUD levelId={levelId} isBoss title={config.title}
         introText={config.introText} victoryText={config.victoryText}
-        mechanicHint="点击水晶 → 对着麦克风发出对应的声音" onExit={handleExit} />
+        mechanicHint="点击水晶 → 对着麦克风发出对应的声音" onExit={handleExit} onBackToMap={handleBackToMap} />
     </GameLayout>
   );
 }

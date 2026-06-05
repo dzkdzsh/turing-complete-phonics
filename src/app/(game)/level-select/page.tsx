@@ -1,5 +1,5 @@
 'use client';
-import { Suspense } from 'react'; import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react'; import { useSearchParams } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state'; import { ERAS } from '@/lib/constants';
 
 const L:Record<number,{id:string;title:string;boss:boolean}[]>={
@@ -14,7 +14,7 @@ const L:Record<number,{id:string;title:string;boss:boolean}[]>={
 };
 
 function C(){
-  const r=useRouter();const sp=useSearchParams();const n=Number(sp.get('era'))||1;
+  const sp=useSearchParams();const n=Number(sp.get('era'))||1;
   const{isAdmin,unlockedLevels,completedLevels,levelStars,setCurrentLevel,setScreen}=useGameStore();
   const era=ERAS[n as keyof typeof ERAS];const lvs=L[n]||[];
 
@@ -28,7 +28,7 @@ function C(){
     <div className="flex flex-col items-center min-h-full p-6 overflow-auto paper-texture" style={{ background: 'linear-gradient(180deg, #fdf8f0 0%, #f5ede0 50%, #efe5d2 100%)' }}>
       {/* Top bar */}
       <div className="w-full max-w-2xl flex items-center justify-between mb-8 animate-in">
-        <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="flex items-center gap-1.5 text-sm text-[#5c4f3a] hover:text-[#2c2416] transition-colors font-medium">
+        <button onClick={()=>{setScreen('era-map');window.location.href='/era-select';}} className="flex items-center gap-1.5 text-sm text-[#5c4f3a] hover:text-[#2c2416] transition-colors font-medium">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           返回地图
         </button>

@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state';
 import { ERAS } from '@/lib/constants';
 
@@ -15,8 +14,8 @@ const REGIONS = [
 ];
 
 export default function EraSelectPage() {
-  const r = useRouter(); const { unlockedEras, completedLevels, isAdmin, setScreen } = useGameStore();
-  const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); r.push(`/level-select?era=${n}`); };
+  const { unlockedEras, completedLevels, isAdmin, setScreen } = useGameStore();
+  const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); window.location.href=`/level-select?era=${n}`; };
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden paper-texture" style={{ background: 'linear-gradient(180deg, #fdf8f0 0%, #f8f1e3 30%, #f3e8d4 70%, #efe0c8 100%)' }}>
@@ -52,10 +51,10 @@ export default function EraSelectPage() {
           <span className="text-[10px] bg-[#6b5b8a]/10 text-[#6b5b8a] px-2 py-0.5 rounded-full font-bold">ADMIN</span>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={()=>{r.push('/journal');}} className="text-xs text-[#5c4f3a]/60 hover:text-[#2c2416] transition-colors font-medium flex items-center gap-1">
+          <button onClick={()=>{window.location.href='/journal';}} className="text-xs text-[#5c4f3a]/60 hover:text-[#2c2416] transition-colors font-medium flex items-center gap-1">
             <span>📖</span> 图鉴
           </button>
-          <button onClick={()=>{setScreen('splash');r.push('/');}} className="text-xs text-[#5c4f3a]/50 hover:text-[#2c2416] transition-colors">离开</button>
+          <button onClick={()=>{setScreen('splash');window.location.href='/';}} className="text-xs text-[#5c4f3a]/50 hover:text-[#2c2416] transition-colors">离开</button>
         </div>
       </div>
 

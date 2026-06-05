@@ -3,31 +3,43 @@
 import { useEffect, useRef } from 'react';
 import { createGameConfig } from '@/game/config';
 
-// 模块级标志：防止 Strict Mode 下的双重初始化
-let globalGameInstance: Phaser.Game | null = null;
-let destroyScheduled = false;
+// 全局单例追踪 —— 用 mountId 区分 SPA 导航 vs Strict Mode 双挂载
+let globalGame: Phaser.Game | null = null;
+let currentMountId = 0;
 
 export default function PhaserGame() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mountIdRef = useRef(0);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    if (globalGameInstance) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const config = createGameConfig(containerRef.current);
-    globalGameInstance = new Phaser.Game(config);
-    (window as unknown as Record<string, unknown>).__PHASER_GAME__ = globalGameInstance;
+    // 分配 mountId
+    mountIdRef.current = ++currentMountId;
+    const myMountId = mountIdRef.current;
 
-    // Strict Mode 下不清除 —— 游戏实例需跨双挂载存活
+    // 如果已有旧实例，强制销毁（SPA 导航场景）
+    if (globalGame) {
+      globalGame.destroy(true);
+      globalGame = null;
+    }
+
+    // 清理 window 残留
+    const win = window as unknown as Record<string, unknown>;
+    win.__PHASER_GAME__ = null;
+
+    // 创建新实例
+    const config = createGameConfig(container);
+    globalGame = new Phaser.Game(config);
+    win.__PHASER_GAME__ = globalGame;
+
     return () => {
-      // 只在第二次 cleanup 时销毁（真正的卸载）
-      if (destroyScheduled) {
-        globalGameInstance?.destroy(true);
-        globalGameInstance = null;
-        destroyScheduled = false;
-        (window as unknown as Record<string, unknown>).__PHASER_GAME__ = null;
-      } else {
-        destroyScheduled = true;
+      // 只有当前 mount 被卸载时才销毁（防止 Strict Mode 双 render 误杀）
+      if (mountIdRef.current === myMountId) {
+        globalGame?.destroy(true);
+        globalGame = null;
+        win.__PHASER_GAME__ = null;
       }
     };
   }, []);

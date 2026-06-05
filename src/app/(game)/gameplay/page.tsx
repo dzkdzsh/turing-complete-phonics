@@ -1,11 +1,11 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
-import { storeLevelConfig } from '@/game/level-config-store';
+import { storeLevelConfig, clearLevelConfig } from '@/game/level-config-store';
 import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 
@@ -30,11 +30,13 @@ const mechanicHints: Record<string, string> = {
 
 function GameplayPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const levelId = searchParams.get('level') || '001-discover-m';
   const { setScreen } = useGameStore();
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // 清理前一个关卡的残留状态
+  useEffect(() => { clearLevelConfig(); }, [levelId]);
 
   useEffect(() => {
     setLoading(true);
@@ -45,26 +47,26 @@ function GameplayPageContent() {
     })();
   }, [levelId]);
 
-  // 配置就绪后通知 Phaser PreloadScene 开始
-  useEffect(() => {
-    if (config) {
-      import('@/game/event-bus').then(m => {
-        m.eventBus.emit('cmd:start-level', { levelId, config });
-      });
-    }
-  }, [config, levelId]);
-
   const handleExit = useCallback(() => {
-    setScreen('level-select'); router.push('/level-select?era=1');
-  }, [setScreen, router]);
+    setScreen('level-select');
+    clearLevelConfig();
+    window.location.href='/level-select?era=1';
+  }, [setScreen]);
+
+  const handleBackToMap = useCallback(() => {
+    setScreen('era-map');
+    clearLevelConfig();
+    window.location.href='/era-select';
+  }, [setScreen]);
 
   if (loading || !config) return (<div className="flex items-center justify-center h-screen" style={{background:'#f5f3f0'}}><p className="text-[#8b7355]">加载关卡中...</p></div>);
 
   const isBoss = config.isBossLevel || config.mechanicType === 'mic_validate';
+  // forceReload key 确保每次进关卡都重建 Phaser
   return (
     <GameLayout levelKey={levelId}>
       <HUD levelId={levelId} isBoss={isBoss} title={config.title} introText={config.introText}
-        victoryText={config.victoryText} mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'} onExit={handleExit} />
+        victoryText={config.victoryText} mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'} onExit={handleExit} onBackToMap={handleBackToMap} />
     </GameLayout>
   );
 }

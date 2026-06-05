@@ -1,10 +1,10 @@
 'use client';
-import { useRouter } from 'next/navigation';
+
 import { useGameStore } from '@/lib/game-state';
 import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const r = useRouter(); const { setScreen } = useGameStore();
+  const { setScreen } = useGameStore();
   const [v, setV] = useState(false);
   useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
 
@@ -22,8 +22,8 @@ export default function Home() {
       <nav className="relative z-20 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
         <span className="font-display text-3xl tracking-tight text-[#d4912a]">图灵拼读<span className="text-xs align-super text-[#9b8c78]">®</span></span>
         <div className="flex items-center gap-8">
-          <button onClick={()=>r.push('/journal')} className="text-sm text-[#9b8c78] hover:text-[#d4912a] transition-colors">图鉴</button>
-          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+          <button onClick={()=>window.location.href='/journal'} className="text-sm text-[#9b8c78] hover:text-[#d4912a] transition-colors">图鉴</button>
+          <button onClick={()=>{setScreen('era-map');window.location.href='/era-select';}}
             className="rounded-full px-6 py-2.5 text-sm bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
             开始探索
           </button>
@@ -43,11 +43,11 @@ export default function Home() {
         </p>
 
         <div className={`flex gap-4 mt-12 transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0 delay-[400ms]':'opacity-0 translate-y-5'}`}>
-          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+          <button onClick={()=>{setScreen('era-map');window.location.href='/era-select';}}
             className="rounded-full px-10 py-5 text-base bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
             开始探索
           </button>
-          <button onClick={()=>r.push('/challenge')}
+          <button onClick={()=>window.location.href='/challenge'}
             className="rounded-full px-10 py-5 text-base bg-white/10 text-[#e8e0d0] font-bold border border-white/15 hover:bg-white/20 hover:scale-[1.03] transition-all">
             ⚡ 课堂挑战
           </button>
