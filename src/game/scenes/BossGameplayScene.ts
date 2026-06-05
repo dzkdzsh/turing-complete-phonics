@@ -105,7 +105,7 @@ export class BossGameplayScene extends GameplayScene {
 
     this.lightCrystal(phoneme);
     AudioManager.getInstance().playSFX('success');
-    eventBus.emit(GameEvents.PHONEME_DETECTED, { phoneme, confidence: 0.9 });
+    // resonator.activate() already emits PHONEME_DETECTED — don't double-emit
 
     if (this.completedPhonemes.length >= this.requiredPhonemes.length) {
       this.showStatus('✨ 全部水晶激活！你是真正的音素大师！', '#10b981');

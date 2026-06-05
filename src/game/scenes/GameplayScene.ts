@@ -180,6 +180,10 @@ export class GameplayScene extends Phaser.Scene {
       steps.push(mt === 'memory_spell' ? '👀 记住闪现的词' : '🔊 听发音');
       steps.push('✋ 拖字母到槽位');
       steps.push('✅ 拼对所有词');
+    } else if (mt === 'mic_validate') {
+      steps.push('👆 点击一颗水晶');
+      steps.push('🎤 对着麦克风发出对应声音');
+      steps.push('✨ 激活全部水晶');
     } else {
       // Fallback for quiz_pick and other mechanics
       steps.push('📋 阅读题目');
@@ -209,7 +213,7 @@ export class GameplayScene extends Phaser.Scene {
     this._guidanceText.setX(-172);
 
     // Bottom hint
-    const hint = current < total ? steps[current].replace(/^[^\s]+\s/, '') : '🎉 完成！';
+    const hint = current < total && steps[current] ? steps[current].replace(/^[^\s]+\s/, '') : '🎉 完成！';
     this._hintText.setText(`💡 ${hint}`);
   }
 

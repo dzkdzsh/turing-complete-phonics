@@ -1,23 +1,25 @@
-// AudioManager —— 加载并播放真实的音素 WAV 音频文件
+// AudioManager — 优先标准真人发音 + DJ真人音标示范音频
+
+import djMap from '@/data/dj-phoneme-map.json';
 
 type SFXType = 'click' | 'success' | 'failure' | 'unlock';
 
-// 音素 → WAV 文件路径
-const PHONEME_FILES: Record<string, string> = {
-  m: '/assets/audio/phonemes/m.wav',
-  s: '/assets/audio/phonemes/s.wav',
-  a: '/assets/audio/phonemes/a.wav',
-  k: '/assets/audio/phonemes/k.wav',
-  ae: '/assets/audio/phonemes/ae.wav',
-  t: '/assets/audio/phonemes/t.wav',
+// 游戏音素 → 标准MP3文件路径（优先使用）
+const standardMap: Record<string, string> = {
+  s: '/assets/audio/standard/s.mp3',
+  k: '/assets/audio/standard/k.mp3',
+  m: '/assets/audio/standard/m.mp3',
+  t: '/assets/audio/standard/t.mp3',
+  a: '/assets/audio/standard/ae.mp3',   // æ 短元音
+  ah: '/assets/audio/standard/aa_long.mp3', // ɑː 长元音
 };
 
-// 合成音 → WAV 文件路径
-const BLEND_FILES: Record<string, string> = {
-  ma: '/assets/audio/blended/ma.wav',
-  sa: '/assets/audio/blended/sa.wav',
-  kat: '/assets/audio/blended/kat.wav',
-};
+// 游戏音素 → DJ分段文件路径（回退）
+function djPath(phoneme: string): string | null {
+  const seg = (djMap as Record<string,number>)[phoneme];
+  if (seg) return `/assets/audio/dj/phoneme_${String(seg).padStart(3,'0')}.mp3`;
+  return null;
+}
 
 export class AudioManager {
   private static instance: AudioManager;
@@ -44,60 +46,65 @@ export class AudioManager {
     return this.ctx;
   }
 
-  /** 预加载所有音素音频文件 */
+  /** 预加载标准+DJ音标音频 */
   async preloadAll() {
     if (this.loaded) return;
     const ctx = this.ensureCtx();
 
-    const allFiles = { ...PHONEME_FILES, ...BLEND_FILES };
-    const entries = Object.entries(allFiles);
+    // 1. 优先加载标准真人发音
+    const stdUrls = [...new Set(Object.values(standardMap))];
+    await Promise.all(stdUrls.map(async (url) => {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const buf = await resp.arrayBuffer();
+        const audioBuf = await ctx.decodeAudioData(buf);
+        this.buffers.set(`std_${url}`, audioBuf);
+      } catch { /* skip */ }
+    }));
 
-    await Promise.all(
-      entries.map(async ([key, url]) => {
-        try {
-          const resp = await fetch(url);
-          const arrayBuf = await resp.arrayBuffer();
-          const audioBuf = await ctx.decodeAudioData(arrayBuf);
-          this.buffers.set(key, audioBuf);
-        } catch {
-          console.warn(`[AudioManager] 无法加载音频: ${url}`);
-        }
-      })
-    );
-
+    // 2. 回退加载DJ分段
+    const segs = Object.values(djMap as Record<string,number>);
+    const unique = [...new Set(segs)];
+    await Promise.all(unique.map(async (seg) => {
+      const url = `/assets/audio/dj/phoneme_${String(seg).padStart(3,'0')}.mp3`;
+      try {
+        const resp = await fetch(url);
+        const buf = await resp.arrayBuffer();
+        const audioBuf = await ctx.decodeAudioData(buf);
+        this.buffers.set(`dj_${seg}`, audioBuf);
+      } catch { /* skip */ }
+    }));
     this.loaded = true;
   }
 
-  /** 播放单个音素 — .wav优先，否则用浏览器标准TTS发音 */
+  /** 播放单个音素 — 标准真人发音优先 */
   playPhoneme(phoneme: string) {
-    const buf = this.buffers.get(phoneme);
-    if (buf) { this.playBuffer(buf); return; }
-    // TTS fallback for all phonemes without .wav files
-    try {
-      const u = new SpeechSynthesisUtterance(phoneme);
-      u.lang = 'en-US'; u.rate = 0.6; u.pitch = 1.2;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch(e) { /* unavailable */ }
+    // 1. 优先标准真人发音
+    const stdUrl = standardMap[phoneme];
+    if (stdUrl) {
+      const buf = this.buffers.get(`std_${stdUrl}`);
+      if (buf) { this.playBuffer(buf); return; }
+    }
+    // 2. DJ真人发音回退
+    const seg = (djMap as Record<string,number>)[phoneme];
+    if (seg) {
+      const buf = this.buffers.get(`dj_${seg}`);
+      if (buf) { this.playBuffer(buf); return; }
+    }
+    // 3. 声学合成兜底
+    import('./PhonemeSynth').then(m => m.phonemeSynth.play(phoneme)).catch(() => {});
   }
 
-  /** 播放合成音 */
+  /** 播放合成音 — DJ分段逐个播放 */
   playBlend(blendId: string) {
-    const buf = this.buffers.get(blendId);
-    if (!buf) {
-      // 回退：逐个播放音素
-      const fallback: Record<string, string[]> = {
-        ma: ['m', 'a'], sa: ['s', 'a'], kat: ['k', 'ae', 't'],
-      };
-      const seq = fallback[blendId];
-      if (seq) {
-        seq.forEach((p, i) => {
-          setTimeout(() => this.playPhoneme(p), i * 300);
-        });
-      }
-      return;
+    const fallback: Record<string, string[]> = {
+      ma: ['m', 'a'], sa: ['s', 'a'], kat: ['k', 'a', 't'], sh: ['sh'],
+    };
+    const seq = fallback[blendId];
+    if (seq) {
+      seq.forEach((p, i) => { setTimeout(() => this.playPhoneme(p), i * 200); });
     }
-    this.playBuffer(buf);
   }
 
   private playBuffer(buf: AudioBuffer) {
