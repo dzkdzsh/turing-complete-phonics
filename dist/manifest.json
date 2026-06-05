@@ -1,0 +1,11 @@
+{
+  "name": "图灵拼读 — Turing Complete for Phonics",
+  "short_name": "图灵拼读",
+  "description": "从声音碎片开始，重建整个英语发音系统。离线可用的自然拼读学习游戏。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf8f0",
+  "theme_color": "#d4912a",
+  "orientation": "landscape",
+  "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
+}

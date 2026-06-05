@@ -43,6 +43,8 @@ export const ERAS = {
     color: '#14b8a6',
     totalLevels: 3,
   },
+  7: { name: '语文工坊', nameEn: 'Chinese Exam', description: '文言实词·古诗鉴赏·文学常识', color: '#ef4444', totalLevels: 4 },
+  8: { name: '历史工坊', nameEn: 'History Exam', description: '古代史·近现代史·综合', color: '#8b5cf6', totalLevels: 3 },
 } as const;
 
 // 音素对应颜色

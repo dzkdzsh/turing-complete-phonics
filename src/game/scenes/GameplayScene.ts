@@ -91,14 +91,16 @@ export class GameplayScene extends Phaser.Scene {
 
     // Hint bar (must exist before _updateGuidance)
     this._hintText = this.add.text(width / 2, height - 20, '', {
-      fontSize: '12px', color: '#5c4f3a', fontFamily: 'sans-serif',
+      fontSize: '12px', color: '#444444', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
     this._updateGuidance('start');
 
     this.spawnObjects();
 
-    if (this.levelConfig.mechanicType === 'hear_and_spell' || this.levelConfig.mechanicType === 'memory_spell' || this.levelConfig.mechanicType === 'sentence_build') {
+    if (this.levelConfig.mechanicType === 'quiz_pick') {
+      this._setupQuizMode();
+    } else if (this.levelConfig.mechanicType === 'hear_and_spell' || this.levelConfig.mechanicType === 'memory_spell' || this.levelConfig.mechanicType === 'sentence_build') {
       this._setupSpellingMode();
     }
 
@@ -178,6 +180,11 @@ export class GameplayScene extends Phaser.Scene {
       steps.push(mt === 'memory_spell' ? '👀 记住闪现的词' : '🔊 听发音');
       steps.push('✋ 拖字母到槽位');
       steps.push('✅ 拼对所有词');
+    } else {
+      // Fallback for quiz_pick and other mechanics
+      steps.push('📋 阅读题目');
+      steps.push('👆 选择正确答案');
+      steps.push('✅ 完成所有题目');
     }
 
     // Determine current step
@@ -206,6 +213,59 @@ export class GameplayScene extends Phaser.Scene {
     this._hintText.setText(`💡 ${hint}`);
   }
 
+  private _setupQuizMode() {
+    const qs = (this.levelConfig as any).questions as {q:string;opts:string[];ans:string}[] || [];
+    this._spellWords = qs.map(q => q.ans);
+    this._spellWordIndex = 0; this._spellAttempts = 0;
+    this._loadQuizWord();
+  }
+  private _loadQuizWord() {
+    this._spellSlots.forEach(s => s.destroy()); this._spellLetters.forEach(l => l.destroy());
+    this._spellSlots = []; this._spellLetters = [];
+    const w = this.scale.width, h = this.scale.height;
+    const qs = (this.levelConfig as any).questions as {q:string;opts:string[];ans:string}[] || [];
+    const qi = qs[this._spellWordIndex];
+    if (!qi) { eventBus.emit(GameEvents.WIN_CONDITION_MET, { stars: Math.max(1, 4 - this._spellAttempts), timeSec: 0 }); return; }
+    // Question text
+    const qt = this.add.text(w/2, h/3-40, qi.q, { fontSize:'22px', color:'#1a1a1a', fontFamily:'sans-serif',fontStyle:'bold' }).setOrigin(0.5).setDepth(10);
+    // Option buttons
+    const opts = Phaser.Utils.Array.Shuffle([...qi.opts]);
+    const btnW = 180, btnH = 50, gap = 14, cols = 2;
+    const totalW = cols * btnW + (cols-1) * gap, startX = w/2 - totalW/2 + btnW/2, startY = h/2;
+    const btns: Phaser.GameObjects.Container[] = [];
+    opts.forEach((opt, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const bx = startX + col * (btnW + gap), by = startY + row * (btnH + gap);
+      const g = this.add.graphics();
+      g.fillStyle(0xffffff, 0.08); g.fillRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+      g.lineStyle(2, 0xd4912a, 0.3); g.strokeRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+      const tx = this.add.text(bx, by, opt, { fontSize:'16px', color:'#1a1a1a', fontFamily:'sans-serif' }).setOrigin(0.5);
+      const zone = this.add.zone(bx, by, btnW, btnH).setInteractive({useHandCursor:true}).setDepth(10);
+      const container = this.add.container(0, 0); container.add([g, tx]);
+      zone.on('pointerdown', () => {
+        const isCorrect = opt === qi.ans;
+        g.clear();
+        g.fillStyle(isCorrect ? 0x10b981 : 0xef4444, 0.3);
+        g.fillRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+        g.lineStyle(2, isCorrect ? 0x10b981 : 0xef4444, 0.6);
+        g.strokeRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+        btns.forEach(b => b.list.forEach(c => { if (c.type==='Zone') c.disableInteractive(); }));
+        if (isCorrect) {
+          eventBus.emit(GameEvents.PHONEME_DETECTED, { phoneme: qi.ans });
+          this.companion?.setMood('happy');
+          this.time.delayedCall(1200, () => { this._spellWordIndex++; qt.destroy(); btns.forEach(b=>b.destroy()); this._loadQuizWord(); });
+        } else {
+          this.companion?.setMood('sad');
+          this.time.delayedCall(1000, () => { this._spellWordIndex++; qt.destroy(); btns.forEach(b=>b.destroy()); this._loadQuizWord(); });
+        }
+      });
+      container.add(zone);
+      container.setDepth(10);
+      btns.push(container);
+    });
+    this.add.text(w/2, h-30, `${this._spellWordIndex+1}/${qs.length}`, { fontSize:'13px', color:'#555555',fontFamily:'monospace' }).setOrigin(0.5).setDepth(10);
+  }
+
   private _setupSpellingMode() {
     if (this.levelConfig.mechanicType === 'sentence_build') {
       this._spellWords = ((this.levelConfig as any).sentences || []).map((s:any) => s.text);
@@ -232,10 +292,15 @@ export class GameplayScene extends Phaser.Scene {
     const totalW = slotCount * slotSize + (slotCount - 1) * gap;
     const slotStartX = w / 2 - totalW / 2 + slotSize / 2, slotY = h / 2 + 30;
     for (let i = 0; i < slotCount; i++) { this._spellSlots.push(new SpellingSlot(this, slotStartX + i * (slotSize + gap), slotY, slotSize, i)); }
+    const isChinese = /[一-鿿]/.test(word);
     const alphabet = 'abcdefghijklmnopqrstuvwxyz';
     const distractors: string[] = [];
-    if (!isSentence) {
+    if (!isSentence && !isChinese) {
       while (distractors.length < Math.max(2, 6 - letters.length)) { const r = alphabet[Phaser.Math.Between(0, 25)]; if (!letters.includes(r) && !distractors.includes(r)) distractors.push(r); }
+    }
+    if (isChinese) {
+      const chinesePool = '山水火日月木口人大小天地风云雨雪花草鸟鱼'.split('');
+      while (distractors.length < Math.max(2, 4 - letters.length)) { const r = chinesePool[Math.floor(Math.random()*chinesePool.length)]; if (!letters.includes(r) && !distractors.includes(r)) distractors.push(r); }
     }
     const cands = Phaser.Utils.Array.Shuffle([...letters, ...distractors]);
     const ts = isSentence ? Math.min(80, 450 / cands.length) : 54, tg = isSentence ? 6 : 10, ttW = cands.length * ts + (cands.length - 1) * tg;
@@ -253,11 +318,20 @@ export class GameplayScene extends Phaser.Scene {
     spG.fillStyle(0xffffff, 0.9); spG.fillCircle(w / 2, spY, 38); spG.lineStyle(3, 0xd4912a, 0.4); spG.strokeCircle(w / 2, spY, 38);
     const spT = this.add.text(w / 2, spY, '🔊', { fontSize: '36px' }).setOrigin(0.5).setDepth(6);
     this.add.zone(w / 2, spY, 80, 80).setInteractive({ useHandCursor: true }).setDepth(7).on('pointerdown', () => { this._speakWord(word); this.tweens.add({ targets: spT, scaleX: 1.3, scaleY: 1.3, duration: 120, yoyo: true, ease: 'Bounce.easeOut' }); });
-    this.add.text(w / 2, spY - 50, `${this._spellWordIndex + 1}/${this._spellWords.length}`, { fontSize: '13px', color: '#9b8c78', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(5);
+    this.add.text(w / 2, spY - 50, `${this._spellWordIndex + 1}/${this._spellWords.length}`, { fontSize: '13px', color: '#555555', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(5);
     this.time.delayedCall(500, () => this._speakWord(word));
     if (this.levelConfig.mechanicType === 'memory_spell') {
-      const ft = this.add.text(w / 2, spY, word.toUpperCase(), { fontSize: '56px', color: '#f97316', fontFamily: 'Crimson Text, serif', fontStyle: 'bold', stroke: '#fff', strokeThickness: 4 }).setOrigin(0.5).setDepth(20).setAlpha(0);
-      this.tweens.add({ targets: ft, alpha: 1, duration: 300 }); this.time.delayedCall(3000, () => { this.tweens.add({ targets: ft, alpha: 0, duration: 400, onComplete: () => ft.destroy() }); });
+      const vocab = ((this.levelConfig as any).vocab || []).find((v:any)=>v.w===word);
+      const ft = this.add.text(w / 2, spY - 20, word.toUpperCase(), { fontSize: '56px', color: '#f97316', fontFamily: 'Crimson Text, serif', fontStyle: 'bold', stroke: '#fff', strokeThickness: 4 }).setOrigin(0.5).setDepth(20).setAlpha(0);
+      if (vocab) {
+        const fp = this.add.text(w / 2, spY + 30, vocab.p||'', { fontSize: '18px', color: '#555555', fontFamily: 'sans-serif' }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        const fc = this.add.text(w / 2, spY + 55, vocab.c||'', { fontSize: '20px', color: '#d4912a', fontFamily: 'sans-serif', fontStyle: 'bold' }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        this.tweens.add({ targets: [ft,fp,fc], alpha: 1, duration: 300 });
+        this.time.delayedCall(3500, () => { this.tweens.add({ targets: [ft,fp,fc], alpha: 0, duration: 400, onComplete: () => { ft.destroy(); fp.destroy(); fc.destroy(); } }); });
+      } else {
+        this.tweens.add({ targets: ft, alpha: 1, duration: 300 });
+        this.time.delayedCall(3000, () => { this.tweens.add({ targets: ft, alpha: 0, duration: 400, onComplete: () => ft.destroy() }); });
+      }
     }
   }
   private _checkSpellComplete() {

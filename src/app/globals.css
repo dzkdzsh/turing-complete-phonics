@@ -28,7 +28,7 @@
 
 html, body {
   margin: 0; padding: 0; overflow: hidden; height: 100%;
-  background: var(--paper);
+  background: #0f0d0a;
   color: var(--ink);
   font-family: 'Inter', -apple-system, sans-serif;
   font-feature-settings: 'cv02','cv03','cv04';

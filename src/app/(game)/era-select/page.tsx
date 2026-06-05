@@ -10,6 +10,8 @@ const REGIONS = [
   { eraNum:4, x:50, y:75, color:'#e64980', bg:'#fdf2f5', icon:'✍️', name:'Dictation Workshop', desc:'听见词→拼出字母' },
   { eraNum:5, x:22, y:80, color:'#f97316', bg:'#fff7ed', icon:'🧠', name:'Memory Palace', desc:'看词→隐去→默写' },
   { eraNum:6, x:78, y:80, color:'#14b8a6', bg:'#f0fdfa', icon:'📖', name:'Sentence Workshop', desc:'单词→句子→阅读' },
+  { eraNum:7, x:52, y:92, color:'#ef4444', bg:'#fef2f2', icon:'📚', name:'Chinese Workshop', desc:'文言实词·古诗鉴赏·文学常识' },
+  { eraNum:8, x:22, y:92, color:'#8b5cf6', bg:'#f5f3ff', icon:'🏛️', name:'History Workshop', desc:'古代史·近现代史·综合' },
 ];
 
 export default function EraSelectPage() {

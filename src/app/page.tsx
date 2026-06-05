@@ -1,45 +1,65 @@
 'use client';
-import { useRouter } from 'next/navigation'; import { useGameStore } from '@/lib/game-state';
+import { useRouter } from 'next/navigation';
+import { useGameStore } from '@/lib/game-state';
 import { useEffect, useState } from 'react';
 
-const STEPS = ['声音 Sound','音素 Phoneme','字母 Glyph','拼读 Blend','规则 Rule','阅读 Read'];
-
 export default function Home() {
-  const r = useRouter(); const { setScreen } = useGameStore(); const [v, setV] = useState(false);
+  const r = useRouter(); const { setScreen } = useGameStore();
+  const [v, setV] = useState(false);
   useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
 
   return (
-    <div className="flex items-center justify-center h-full paper-texture" style={{ background: 'linear-gradient(165deg, #fdf8f0 0%, #f5ede0 40%, #efe5d2 100%)' }}>
-      <div className={`text-center px-6 transition-all duration-800 ${v ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-        style={{ transitionDuration: '800ms', transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)' }}>
+    <div className="relative min-h-screen w-full overflow-hidden" style={{background:'#0f0d0a'}}>
+      {/* Video background */}
+      <video autoPlay loop muted playsInline preload="auto"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        src="/hero-bg.mp4" />
 
-        {/* Brand mark */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/70 border border-[#2c2416]/[0.04] shadow-sm mb-10">
-          <div className="w-2 h-2 rounded-full bg-[#d4912a] pulse-ring" />
-          <span className="text-[10px] font-semibold text-[#5c4f3a] tracking-[0.15em] uppercase">Language Reconstruction Project</span>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-[#0f0d0a]/70 via-transparent to-[#0f0d0a]/90 pointer-events-none" />
+
+      {/* Navigation */}
+      <nav className="relative z-20 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
+        <span className="font-display text-3xl tracking-tight text-[#d4912a]">图灵拼读<span className="text-xs align-super text-[#9b8c78]">®</span></span>
+        <div className="flex items-center gap-8">
+          <button onClick={()=>r.push('/journal')} className="text-sm text-[#9b8c78] hover:text-[#d4912a] transition-colors">图鉴</button>
+          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+            className="rounded-full px-6 py-2.5 text-sm bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
+            开始探索
+          </button>
         </div>
+      </nav>
 
-        <h1 className="font-display text-7xl font-bold text-[#2c2416] mb-3 tracking-tight">图灵拼读</h1>
-        <p className="text-base text-[#d4912a] font-semibold tracking-[0.3em] uppercase mb-12">Turing Complete for Phonics</p>
+      {/* Hero */}
+      <div className="relative z-20 flex flex-col items-center justify-center text-center px-6" style={{paddingTop:'calc(14rem)',paddingBottom:'12rem'}}>
+        <h1 className={`font-display text-5xl sm:text-7xl md:text-8xl max-w-4xl font-normal transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0':'opacity-0 translate-y-6'}`}
+          style={{lineHeight:0.95,letterSpacing:'-2px',color:'#e8e0d0'}}>
+          在<span className="italic text-[#9b8c78]">声音的废墟</span>之上，<br/>我们重建<span className="italic text-[#9b8c78]">语言。</span>
+        </h1>
 
-        <p className="text-[#5c4f3a]/80 text-sm max-w-md mx-auto leading-relaxed mb-12">
-          从最基础的<span className="font-semibold text-[#2c2416]">音素元件</span>开始，
-          一步步<span className="font-semibold text-[#2c2416]">重建整个英语发音系统</span>。
-          如同考古学家在废墟中复原失落的语言文明。
+        <p className={`text-base sm:text-lg max-w-2xl mt-8 leading-relaxed transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0 delay-[200ms]':'opacity-0 translate-y-5'}`}
+          style={{color:'#9b8c78'}}>
+          从最基础的音素碎片开始，一步步重建整个英语发音系统。<br/>如同考古学家在废墟中复原失落的语言文明。
         </p>
 
-        <div className="flex gap-4 justify-center mb-16">
-          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="btn-primary">开始探索</button>
+        <div className={`flex gap-4 mt-12 transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0 delay-[400ms]':'opacity-0 translate-y-5'}`}>
+          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+            className="rounded-full px-10 py-5 text-base bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
+            开始探索
+          </button>
+          <button onClick={()=>r.push('/challenge')}
+            className="rounded-full px-10 py-5 text-base bg-white/10 text-[#e8e0d0] font-bold border border-white/15 hover:bg-white/20 hover:scale-[1.03] transition-all">
+            ⚡ 课堂挑战
+          </button>
         </div>
 
-        {/* Progress chain */}
-        <div className="flex items-center gap-2 justify-center flex-wrap">
-          {STEPS.map((s,i) => (
-            <span key={s} className="flex items-center gap-2">
-              <span className="text-[11px] text-[#9b8c78] font-medium tracking-wide">{s}</span>
-              {i < 5 && <svg width="10" height="10" viewBox="0 0 10 10" className="text-[#d4c9b6]"><path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
-            </span>
-          ))}
+        <div className="flex items-center gap-3 mt-20 text-[11px] text-[#5c554c] font-medium tracking-widest">
+          <span>SOUND</span><span className="text-[#3d3933]">→</span>
+          <span>PHONEME</span><span className="text-[#3d3933]">→</span>
+          <span>GLYPH</span><span className="text-[#3d3933]">→</span>
+          <span>SPELL</span><span className="text-[#3d3933]">→</span>
+          <span>MEMORY</span><span className="text-[#3d3933]">→</span>
+          <span className="text-[#d4912a]">READ</span>
         </div>
       </div>
     </div>

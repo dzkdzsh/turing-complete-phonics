@@ -11,6 +11,7 @@ export type MechanicType =
   | 'hear_and_spell'
   | 'memory_spell'
   | 'sentence_build'
+  | 'quiz_pick'
   | 'encoding_board';
 
 export type InputType = 'mouse' | 'mic' | 'mouse_and_mic';
@@ -124,6 +125,7 @@ export interface LevelConfig {
   gameObjects: GameObjectDef[];
   words?: string[];
   sentences?: { text: string; words: string[]; emoji?: string }[];
+  questions?: { q: string; opts: string[]; ans: string }[];
   audioClips: AudioClipDef[];
   hints: HintDef[];
   failureModes: FailureMode[];

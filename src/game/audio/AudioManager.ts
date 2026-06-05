@@ -68,14 +68,17 @@ export class AudioManager {
     this.loaded = true;
   }
 
-  /** 播放单个音素 */
+  /** 播放单个音素 — .wav优先，否则用浏览器标准TTS发音 */
   playPhoneme(phoneme: string) {
     const buf = this.buffers.get(phoneme);
-    if (!buf) {
-      console.warn(`[AudioManager] 音素未加载: ${phoneme}`);
-      return;
-    }
-    this.playBuffer(buf);
+    if (buf) { this.playBuffer(buf); return; }
+    // TTS fallback for all phonemes without .wav files
+    try {
+      const u = new SpeechSynthesisUtterance(phoneme);
+      u.lang = 'en-US'; u.rate = 0.6; u.pitch = 1.2;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch(e) { /* unavailable */ }
   }
 
   /** 播放合成音 */

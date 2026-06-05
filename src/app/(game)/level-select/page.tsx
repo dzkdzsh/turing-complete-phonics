@@ -9,6 +9,8 @@ const L:Record<number,{id:string;title:string;boss:boolean}[]>={
   4:[{id:'011-spell-cvc',title:'CVC 听写',boss:false},{id:'012-spell-cvcc',title:'混合辅音听写',boss:false},{id:'013-spell-digraph',title:'双字母听写',boss:false},{id:'014-spell-long',title:'长元音听写',boss:false},{id:'015-spell-boss',title:'听写大师',boss:true}],
   5:[{id:'016-memory-cvc',title:'闪记 CVC',boss:false},{id:'017-memory-blend',title:'闪记混合',boss:false},{id:'018-memory-sight',title:'视觉词闪记',boss:false},{id:'019-memory-boss',title:'记忆大师',boss:true}],
   6:[{id:'020-sentence-simple',title:'简单句子',boss:false},{id:'021-sentence-quest',title:'问句',boss:false},{id:'022-sentence-story',title:'小故事',boss:true}],
+  7:[{id:'023-chinese-pinyin',title:'文言实词',boss:false},{id:'024-chinese-radical',title:'古诗鉴赏',boss:false},{id:'025-chinese-poem',title:'文学常识',boss:false},{id:'026-chinese-boss',title:'语文综合',boss:true}],
+  8:[{id:'027-history-dynasty',title:'古代史',boss:false},{id:'028-history-figures',title:'近现代史',boss:false},{id:'029-history-events',title:'历史综合',boss:false}],
 };
 
 function C(){

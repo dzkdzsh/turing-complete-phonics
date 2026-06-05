@@ -1,0 +1,8 @@
+{
+  "eraNumber": 7, "name": "语文工坊", "nameEn": "Chinese Workshop",
+  "description": "从拼音到汉字，从偏旁到诗句——探索中文的构造之美。",
+  "color": "#ef4444", "totalLevels": 4,
+  "levels": ["023-chinese-pinyin","024-chinese-radical","025-chinese-poem","026-chinese-boss"],
+  "coreMechanic": "quiz_pick",
+  "unlockCondition": "始终解锁"
+}

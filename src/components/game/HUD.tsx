@@ -6,7 +6,7 @@ import LevelStartModal from './LevelStartModal'; import VictoryModal from './Vic
 
 interface HUDProps { levelId: string; isBoss?: boolean; title?: string; introText?: string; victoryText?: string; mechanicHint?: string; onExit?: () => void; }
 
-const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'invent-m','invent-m':'encoding-board','encoding-board':'spell-cvc','spell-cvc':'spell-cvcc','spell-cvcc':'spell-digraph','spell-digraph':'spell-long','spell-long':'spell-boss','spell-boss':'memory-cvc','memory-cvc':'memory-blend','memory-blend':'memory-sight','memory-sight':'memory-boss','memory-boss':'sentence-simple'};
+const CHAIN: Record<string,string>={'discover-m':'discover-s','discover-s':'sound-match','sound-match':'sound-lab','sound-lab':'boss-sounds','boss-sounds':'blend-ma','blend-ma':'blend-sa','blend-sa':'blend-kat','blend-kat':'invent-m','invent-m':'encoding-board','encoding-board':'spell-cvc','spell-cvc':'spell-cvcc','spell-cvcc':'spell-digraph','spell-digraph':'spell-long','spell-long':'spell-boss','spell-boss':'memory-cvc','memory-cvc':'memory-blend','memory-blend':'memory-sight','memory-sight':'memory-boss','memory-boss':'sentence-simple','sentence-simple':'chinese-pinyin','chinese-pinyin':'chinese-radical','chinese-radical':'chinese-poem','chinese-poem':'chinese-boss','chinese-boss':'history-dynasty','history-dynasty':'history-figures','history-figures':'history-events'};
 
 export default function HUD({ levelId, isBoss=false, title='', introText='', victoryText='', mechanicHint='', onExit }: HUDProps) {
   const router = useRouter(); const { completeLevel, unlockLevel, setScreen } = useGameStore();
@@ -24,6 +24,7 @@ export default function HUD({ levelId, isBoss=false, title='', introText='', vic
   },[levelId,completeLevel,unlockLevel]);
 
   const handleExit=useCallback(()=>{eventBus.emit(GameEvents.PAUSE_GAME,{});if(onExit)onExit();else{setScreen('level-select');router.push('/level-select?era=1');}},[onExit,setScreen,router]);
+  const handleBackToMap=useCallback(()=>{eventBus.emit(GameEvents.PAUSE_GAME,{});setScreen('era-map');router.push('/era-select');},[setScreen,router]);
 
   const handleNext=()=>{const s=levelId.substring(levelId.indexOf('-')+1);const n=CHAIN[s];if(n){const num=parseInt(levelId.split('-')[0]);const nid=`${String(num+1).padStart(3,'0')}-${n}`;const path=n==='boss-sounds'?'boss':'gameplay';window.location.href=`/${path}?level=${nid}`;}else{setScreen('era-map');router.push('/era-select');}};
 
@@ -37,7 +38,7 @@ export default function HUD({ levelId, isBoss=false, title='', introText='', vic
       <div className="absolute top-0 left-0 right-0 z-20">
         <div className="mx-4 mt-3 px-4 py-2 rounded-xl bg-[#fdf8f0]/90 backdrop-blur-md border border-[#2c2416]/[0.04] shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={handleExit} className="w-8 h-8 rounded-full bg-[#2c2416]/[0.03] hover:bg-[#2c2416]/[0.08] flex items-center justify-center transition-colors" title="返回">
+            <button onClick={handleBackToMap} className="w-8 h-8 rounded-full bg-[#2c2416]/[0.03] hover:bg-[#2c2416]/[0.08] flex items-center justify-center transition-colors" title="返回地图">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="#5c4f3a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <span className="text-[10px] text-[#d4912a] font-mono font-bold">{String(lvNum).padStart(2,'0')}</span>

@@ -1,0 +1,8 @@
+{
+  "eraNumber": 8, "name": "历史长廊", "nameEn": "History Gallery",
+  "description": "穿越时空，排列朝代，认识那些改变历史的人物与事件。",
+  "color": "#8b5cf6", "totalLevels": 3,
+  "levels": ["027-history-dynasty","028-history-figures","029-history-events"],
+  "coreMechanic": "hear_and_spell",
+  "unlockCondition": "始终解锁"
+}
