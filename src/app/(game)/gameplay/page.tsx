@@ -1,7 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
@@ -10,7 +9,11 @@ import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
-const LOAD_TIMEOUT_MS = 8000; // 12s timeout for level config loading
+
+function getLevelId(): string {
+  if (typeof window === 'undefined') return '001-discover-m';
+  return new URLSearchParams(window.location.search).get('level') || '001-discover-m';
+}
 
 async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
   if (configCache[levelId]) return configCache[levelId];
@@ -34,28 +37,31 @@ const mechanicHints: Record<string, string> = {
   encoding_board: '将音素水晶拖到对应的编码槽中',
 };
 
-function GameplayPageContent() {
-  const searchParams = useSearchParams();
+export default function GameplayPage() {
   const router = useRouter();
-  const levelId = searchParams.get('level') || '001-discover-m';
   const { setScreen } = useGameStore();
+  const [levelId] = useState(getLevelId);
   const [config, setConfig] = useState<LevelConfig | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const retryCount = useRef(0);
+  const loadedRef = useRef(false);
 
   const load = useCallback(async (id: string) => {
-    setLoading(true); setError(false);
-    const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), LOAD_TIMEOUT_MS));
+    setError(false);
+    loadedRef.current = false;
     try {
-      const cfg = await Promise.race([loadLevelConfig(id), timeout]);
-      if (cfg) { storeLevelConfig(id, cfg); setConfig(cfg); }
-      else { setError(true); }
+      const cfg = await loadLevelConfig(id);
+      if (cfg) {
+        storeLevelConfig(id, cfg);
+        setConfig(cfg);
+        loadedRef.current = true;
+      } else {
+        setError(true);
+      }
     } catch { setError(true); }
-    setLoading(false);
   }, []);
 
-  useEffect(() => { retryCount.current = 0; load(levelId); }, [levelId, load]);
+  useEffect(() => { load(levelId); }, [levelId, load]);
 
   // 配置就绪后通知 Phaser PreloadScene
   useEffect(() => {
@@ -72,7 +78,6 @@ function GameplayPageContent() {
 
   const handleRetry = useCallback(() => {
     retryCount.current++;
-    // 多次重试后改用 window.location 做完整刷新
     if (retryCount.current >= 2) {
       window.location.href = window.location.href;
       return;
@@ -80,32 +85,20 @@ function GameplayPageContent() {
     load(levelId);
   }, [levelId, load]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-screen" style={{background:'#1a1814'}}>
-      <div className="text-center">
-        <div className="w-8 h-8 border-2 border-[#d4912a] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-white/60">加载关卡中…</p>
-      </div>
-    </div>
-  );
+  const isBoss = config?.isBossLevel || config?.mechanicType === 'mic_validate';
 
-  if (error || !config) return (
-    <div className="flex flex-col items-center justify-center h-screen gap-4" style={{background:'#1a1814'}}>
-      <p className="text-white/60">关卡加载失败</p>
-      <button onClick={handleRetry} className="rounded-full px-6 py-2.5 text-sm bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">重试</button>
-      <button onClick={handleExit} className="text-xs text-white/40 hover:text-white/70">← 返回地图</button>
-    </div>
-  );
-
-  const isBoss = config.isBossLevel || config.mechanicType === 'mic_validate';
   return (
     <GameLayout levelKey={levelId}>
-      <HUD levelId={levelId} isBoss={isBoss} title={config.title} introText={config.introText}
-        victoryText={config.victoryText} mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'} onExit={handleExit} />
+      {config ? (
+        <HUD levelId={levelId} isBoss={isBoss} title={config.title} introText={config.introText}
+          victoryText={config.victoryText} mechanicHint={mechanicHints[config.mechanicType] || '探索工作台上的装置'} onExit={handleExit} />
+      ) : error ? (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2 rounded-xl bg-[#ef4444]/20 border border-[#ef4444]/30">
+          <span className="text-sm text-white/80">关卡加载失败</span>
+          <button onClick={handleRetry} className="text-xs text-white font-bold bg-white/20 rounded-full px-3 py-1 hover:bg-white/30">重试</button>
+          <button onClick={handleExit} className="text-xs text-white/50 hover:text-white">← 返回</button>
+        </div>
+      ) : null}
     </GameLayout>
   );
-}
-
-export default function GameplayPage() {
-  return (<Suspense fallback={<div className="flex items-center justify-center h-screen" style={{background:'#1a1814'}}><div className="w-8 h-8 border-2 border-[#d4912a] border-t-transparent rounded-full animate-spin mx-auto" /></div>}><GameplayPageContent /></Suspense>);
 }
