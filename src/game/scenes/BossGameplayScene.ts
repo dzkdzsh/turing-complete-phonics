@@ -89,22 +89,17 @@ export class BossGameplayScene extends GameplayScene {
       await this.mic!.start();
       this.isRecording = true;
 
-      const chunks: Float32Array[] = [];
-      this.mic!.startListening((_freq, timeData) => {
-        chunks.push(new Float32Array(timeData));
-        // Auto-stop after ~1.5s
-        const totalLen = chunks.reduce((s, c) => s + c.length, 0);
-        if (totalLen >= 44100 * (RECORD_DURATION_MS / 1000)) {
-          this.mic!.stop();
-          this.processBuffer(chunks, phoneme);
-        }
+      // Collect frequency frames from browser-native AnalyserNode (fast!)
+      const freqFrames: Uint8Array[] = [];
+      this.mic!.startListening((freqData) => {
+        freqFrames.push(new Uint8Array(freqData));
       });
 
-      // Safety timeout
-      this.time.delayedCall(RECORD_DURATION_MS + 800, () => {
+      // Stop after recording duration
+      this.time.delayedCall(RECORD_DURATION_MS, () => {
         if (this.isRecording && this.currentTarget === phoneme) {
           this.mic!.stop();
-          this.processBuffer(chunks, phoneme);
+          this.processFreqFrames(freqFrames, phoneme);
         }
       });
     } catch {
@@ -113,37 +108,21 @@ export class BossGameplayScene extends GameplayScene {
     }
   }
 
-  private processBuffer(chunks: Float32Array[], targetPhoneme: string) {
+  private processFreqFrames(freqFrames: Uint8Array[], targetPhoneme: string) {
     this.isRecording = false;
     if (!this.analyzer) return;
 
-    // Combine chunks
-    const totalLen = chunks.reduce((s, c) => s + c.length, 0);
-    if (totalLen === 0) {
-      this.showStatus('未捕获到音频，请检查麦克风', '#ef4444');
+    if (freqFrames.length < 5) {
+      this.showStatus('录音太短，请再试一次', '#f59e0b');
       return;
     }
 
-    const raw = new Float32Array(totalLen);
-    let off = 0;
-    for (const c of chunks) { raw.set(c, off); off += c.length; }
-
-    // Quick RMS check
-    let rmsSum = 0;
-    for (let i = 0; i < raw.length; i++) rmsSum += raw[i] * raw[i];
-    const rms = Math.sqrt(rmsSum / raw.length);
-
-    if (rms < 0.005) {
-      this.showStatus('音量过低，请靠近麦克风再试', '#f59e0b');
-      return;
-    }
-
-    // Analyze with spectral features
-    const result = this.analyzer.analyzeBuffer(raw);
+    // Fast analysis using browser-native FFT data (no custom DFT!)
+    const result = this.analyzer.analyzeFreqFrames(freqFrames, 44100, 2048);
     console.log('[Boss] target=/' + targetPhoneme + '/ best=/' + (result?.phoneme || '?') +
-      '/ conf=' + ((result?.confidence || 0) * 100).toFixed(0) + '% RMS=' + rms.toFixed(4));
+      '/ conf=' + ((result?.confidence || 0) * 100).toFixed(0) + '% frames=' + freqFrames.length);
 
-    if (!result) {
+    if (!result || result.confidence < 0.15) {
       this.showStatus('没有检测到清晰的声音，请再试试', '#f59e0b');
       return;
     }

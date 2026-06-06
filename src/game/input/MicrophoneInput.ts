@@ -26,7 +26,7 @@ export class MicrophoneInput {
       this.ctx = new AudioContext({ sampleRate: 44100 });
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 2048;
-      this.analyser.smoothingTimeConstant = 0.3;
+      this.analyser.smoothingTimeConstant = 0; // no smoothing for accurate spectral analysis
 
       const source = this.ctx.createMediaStreamSource(this.stream);
       source.connect(this.analyser);

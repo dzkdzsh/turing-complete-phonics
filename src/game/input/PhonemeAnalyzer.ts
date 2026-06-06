@@ -158,7 +158,103 @@ function scorePhonemes(f: SpectralFeatures): Record<string, number> {
   return scores;
 }
 
+/**
+ * 用浏览器 AnalyserNode 提供的频域数据做快速分析
+ * freqFrames: 录制期间收集的 Uint8Array 帧数组（来自 analyser.getByteFrequencyData）
+ * sampleRate: AudioContext 采样率
+ * fftSize: AnalyserNode 的 fftSize
+ */
+function extractFeaturesFromFreqFrames(
+  freqFrames: Uint8Array[],
+  sampleRate: number,
+  fftSize: number,
+): SpectralFeatures | null {
+  if (freqFrames.length === 0) return null;
+
+  const binFreq = sampleRate / fftSize;
+  const numBins = freqFrames[0].length; // frequencyBinCount = fftSize/2
+
+  // Energy threshold for silence stripping
+  const frameEnergies: number[] = freqFrames.map(data => {
+    let e = 0; for (let k = 0; k < data.length; k++) e += data[k]; return e;
+  });
+  const sorted = [...frameEnergies].sort((a, b) => a - b);
+  const threshold = sorted[Math.floor(sorted.length * 0.3)] * 1.5 + 2;
+
+  let totalCentroid = 0, totalLow400 = 0, totalLow600 = 0, totalMid = 0, totalHigh = 0;
+  let frameCount = 0;
+
+  for (let fi = 0; fi < freqFrames.length; fi++) {
+    if (frameEnergies[fi] < threshold) continue;
+    const data = freqFrames[fi];
+    let energy = 0, weighted = 0, e400 = 0, e600 = 0, eMid = 0, eHigh = 0;
+    for (let k = 0; k < data.length; k++) {
+      const m = data[k];
+      const freq = k * binFreq;
+      energy += m;
+      weighted += m * freq;
+      if (freq < 400) e400 += m;
+      if (freq < 600) e600 += m;
+      if (freq >= 800 && freq <= 2000) eMid += m;
+      if (freq > 3500) eHigh += m;
+    }
+    if (energy > 1) {
+      totalCentroid += weighted / energy;
+      totalLow400 += e400 / energy;
+      totalLow600 += e600 / energy;
+      totalMid += eMid / energy;
+      totalHigh += eHigh / energy;
+      frameCount++;
+    }
+  }
+
+  if (frameCount === 0) return null;
+
+  // ZCR approximated from energy variation
+  let zcr = 0;
+  for (let i = 1; i < frameEnergies.length; i++) {
+    if (Math.abs(frameEnergies[i] - frameEnergies[i - 1]) > 5) zcr++;
+  }
+  const zcrNorm = frameEnergies.length > 0 ? zcr / frameEnergies.length : 0;
+
+  return {
+    centroid: totalCentroid / frameCount,
+    low400Ratio: totalLow400 / frameCount,
+    low600Ratio: totalLow600 / frameCount,
+    midRatio: totalMid / frameCount,
+    highRatio: totalHigh / frameCount,
+    zeroCrossingRate: zcrNorm,
+    totalFrames: frameCount,
+    totalPossibleFrames: freqFrames.length,
+  };
+}
+
 export class PhonemeAnalyzer {
+  /**
+   * 快速分析：用浏览器 AnalyserNode 频域帧（零 DFT 开销）
+   * @param freqFrames 录制期间收集的 Uint8Array[]（来自 getByteFrequencyData）
+   * @param sampleRate AudioContext 采样率
+   * @param fftSize AnalyserNode 的 fftSize
+   */
+  analyzeFreqFrames(
+    freqFrames: Uint8Array[],
+    sampleRate: number,
+    fftSize: number,
+  ): PhonemeMatch | null {
+    const features = extractFeaturesFromFreqFrames(freqFrames, sampleRate, fftSize);
+    if (!features) return null;
+
+    const scores = scorePhonemes(features);
+    let bestPhoneme = '';
+    let bestScore = 0;
+    for (const [ph, score] of Object.entries(scores)) {
+      if (score > bestScore) { bestScore = score; bestPhoneme = ph; }
+    }
+
+    if (bestScore < 0.15) return null;
+    return { phoneme: bestPhoneme, confidence: bestScore };
+  }
+
   /**
    * 全量分析：对完整音频 buffer 做频谱分析，返回最匹配音素
    * @param audioData 16kHz Float32Array PCM
