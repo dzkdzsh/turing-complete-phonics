@@ -14,7 +14,7 @@
   "winCondition": {
     "type": "target_blend_achieved",
     "targets": [
-      { "inputPhonemes": ["m", "a"], "expectedOutput": "ma" }
+      { "inputPhonemes": ["m", "ɑː"], "expectedOutput": "mɑː" }
     ],
     "maxAttempts": 20,
     "timeLimitSec": 240
@@ -53,18 +53,18 @@
       "type": "sound_creature",
       "position": { "x": 150, "y": 400 },
       "draggable": false,
-      "phoneme": "a",
+      "phoneme": "ɑː",
       "spriteKey": "a_node",
-      "label": "/a/",
+      "label": "/ɑː/",
       "onInteractAnimation": "pulse",
-      "onInteractSound": "a_phoneme",
+      "onInteractSound": "ɑː_phoneme",
       "initialState": "active",
       "ports": [
         {
           "id": "a_out",
           "direction": "output",
           "position": { "x": 60, "y": 0 },
-          "acceptedPhonemes": ["a"]
+          "acceptedPhonemes": ["ɑː"]
         }
       ]
     },
@@ -87,7 +87,7 @@
           "id": "blend_in_2",
           "direction": "input",
           "position": { "x": -80, "y": 30 },
-          "acceptedPhonemes": ["a"]
+          "acceptedPhonemes": ["ɑː"]
         },
         {
           "id": "blend_out",
@@ -99,8 +99,8 @@
   ],
   "audioClips": [
     { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
-    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" },
-    { "id": "ma_blend", "file": "blended/ma.wav", "type": "blend" }
+    { "id": "ɑː_phoneme", "file": "phonemes/ɑː.wav", "type": "phoneme", "phoneme": "ɑː" },
+    { "id": "ma_blend", "file": "blended/mɑː.mp3", "type": "blend" }
   ],
   "hints": [
     {
@@ -112,8 +112,8 @@
     },
     {
       "hintIndex": 2,
-      "text": "用同样的方法把 /a/ 也连到合成器。两个声音流进合成器，就会产生一个新的组合声音 /ma/！",
-      "textEn": "Connect /a/ to the blender the same way. Two sounds flowing in will produce a new combined sound /ma/!",
+      "text": "用同样的方法把 /ɑː/ 也连到合成器。两个声音流进合成器，就会产生一个新的组合声音 /ma/！",
+      "textEn": "Connect /ɑː/ to the blender the same way. Two sounds flowing in will produce a new combined sound /ma/!",
       "highlightObjectIds": ["source_a", "blender_ma"],
       "autoShowAfterSec": 70
     }

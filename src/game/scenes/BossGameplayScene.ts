@@ -43,7 +43,7 @@ export class BossGameplayScene extends GameplayScene {
     if (!this.levelConfig) return;
     super.create();
 
-    this.requiredPhonemes = this.levelConfig.winCondition.requiredPhonemes || ['m', 's', 'a'];
+    this.requiredPhonemes = this.levelConfig.winCondition.requiredPhonemes || ['m', 's', 'ɑː'];
     this.mic = new MicrophoneInput();
     this.analyzer = new PhonemeAnalyzer();
 

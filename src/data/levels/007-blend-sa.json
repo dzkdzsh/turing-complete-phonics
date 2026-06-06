@@ -13,7 +13,7 @@
   "winCondition": {
     "type": "target_blend_achieved",
     "targets": [
-      { "inputPhonemes": ["s", "a"], "expectedOutput": "sa" }
+      { "inputPhonemes": ["s", "ɑː"], "expectedOutput": "sɑː" }
     ],
     "maxAttempts": 15,
     "timeLimitSec": 200
@@ -52,18 +52,18 @@
       "type": "sound_creature",
       "position": { "x": 150, "y": 400 },
       "draggable": false,
-      "phoneme": "a",
+      "phoneme": "ɑː",
       "spriteKey": "a_node",
-      "label": "/a/",
+      "label": "/ɑː/",
       "onInteractAnimation": "pulse",
-      "onInteractSound": "a_phoneme",
+      "onInteractSound": "ɑː_phoneme",
       "initialState": "active",
       "ports": [
         {
           "id": "a_out",
           "direction": "output",
           "position": { "x": 60, "y": 0 },
-          "acceptedPhonemes": ["a"]
+          "acceptedPhonemes": ["ɑː"]
         }
       ]
     },
@@ -86,7 +86,7 @@
           "id": "blend_in_2",
           "direction": "input",
           "position": { "x": -80, "y": 30 },
-          "acceptedPhonemes": ["a"]
+          "acceptedPhonemes": ["ɑː"]
         },
         {
           "id": "blend_out",
@@ -98,14 +98,14 @@
   ],
   "audioClips": [
     { "id": "s_phoneme", "file": "phonemes/s.wav", "type": "phoneme", "phoneme": "s" },
-    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" },
-    { "id": "sa_blend", "file": "blended/sa.wav", "type": "blend" }
+    { "id": "ɑː_phoneme", "file": "phonemes/ɑː.wav", "type": "phoneme", "phoneme": "ɑː" },
+    { "id": "sa_blend", "file": "blended/sɑː.mp3", "type": "blend" }
   ],
   "hints": [
     {
       "hintIndex": 1,
-      "text": "和上次一样！把两个声音用线连到合成器。这次左边是 /s/ 和 /a/。",
-      "textEn": "Just like last time! Connect both sounds to the blender. This time on the left you have /s/ and /a/.",
+      "text": "和上次一样！把两个声音用线连到合成器。这次左边是 /s/ 和 /ɑː/。",
+      "textEn": "Just like last time! Connect both sounds to the blender. This time on the left you have /s/ and /ɑː/.",
       "highlightObjectIds": ["source_s", "source_a"],
       "autoShowAfterSec": 25
     }
@@ -118,10 +118,10 @@
       "hintIndex": 1
     }
   ],
-  "introText": "合成器又出现了！这次左边的两个声音是 /s/ 和 /a/。用线路把它们连到合成器的两个输入端口——看看这次的组合会产生什么新声音？",
-  "introTextEn": "The blender appears again! This time the two sounds are /s/ and /a/. Connect them to the blender's two inputs — what new sound will emerge?",
-  "victoryText": "又一次成功！/s/ + /a/ = /sa/。现在你已经证实了一个规律：任何两个声音都可以被合成器'焊接'成新的声音单元。这就是语言工程师的'焊接'技术！",
-  "victoryTextEn": "Success again! /s/ + /a/ = /sa/. You've confirmed a pattern: any two sounds can be 'welded' by the blender into a new sound unit. This is the Language Engineer's 'welding' technique!",
+  "introText": "合成器又出现了！这次左边的两个声音是 /s/ 和 /ɑː/。用线路把它们连到合成器的两个输入端口——看看这次的组合会产生什么新声音？",
+  "introTextEn": "The blender appears again! This time the two sounds are /s/ and /ɑː/. Connect them to the blender's two inputs — what new sound will emerge?",
+  "victoryText": "又一次成功！/s/ + /ɑː/ = /sa/。现在你已经证实了一个规律：任何两个声音都可以被合成器'焊接'成新的声音单元。这就是语言工程师的'焊接'技术！",
+  "victoryTextEn": "Success again! /s/ + /ɑː/ = /sa/. You've confirmed a pattern: any two sounds can be 'welded' by the blender into a new sound unit. This is the Language Engineer's 'welding' technique!",
   "prerequisiteLevels": ["006-blend-ma"],
   "requiredStarsToUnlock": 0
 }

@@ -12,7 +12,7 @@
   "inputType": "mouse",
   "winCondition": {
     "type": "all_sounds_produced",
-    "requiredPhonemes": ["m", "s", "a"],
+    "requiredPhonemes": ["m", "s", "ɑː"],
     "maxAttempts": 99,
     "timeLimitSec": 300
   },
@@ -54,37 +54,37 @@
       "initialState": "active"
     },
     {
-      "id": "mouth_shape_a",
+      "id": "mouth_shape_ɑː",
       "type": "mouth_shape",
       "position": { "x": 640, "y": 250 },
       "draggable": false,
-      "phoneme": "a",
+      "phoneme": "ɑː",
       "spriteKey": "mouth_open_wide",
       "label": "张大嘴巴",
       "labelEn": "Open wide",
       "tooltip": "嘴巴张大，舌头放平",
       "onInteractAnimation": "pulse",
-      "onInteractSound": "a_phoneme",
+      "onInteractSound": "ɑː_phoneme",
       "initialState": "active"
     }
   ],
   "audioClips": [
     { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
     { "id": "s_phoneme", "file": "phonemes/s.wav", "type": "phoneme", "phoneme": "s" },
-    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" }
+    { "id": "ɑː_phoneme", "file": "phonemes/ɑː.wav", "type": "phoneme", "phoneme": "ɑː" }
   ],
   "hints": [
     {
       "hintIndex": 1,
       "text": "点击三种不同的口型，听听每种口型能产生什么声音。你觉得这和真实的嘴巴有关系吗？",
       "textEn": "Click the three mouth shapes to hear what each produces. How does this relate to a real mouth?",
-      "highlightObjectIds": ["mouth_shape_m", "mouth_shape_s", "mouth_shape_a"],
+      "highlightObjectIds": ["mouth_shape_m", "mouth_shape_s", "mouth_shape_ɑː"],
       "autoShowAfterSec": 20
     },
     {
       "hintIndex": 2,
-      "text": "试试看：双唇闭合发出嗡嗡声(/m/)，舌尖抵齿发出嘶嘶声(/s/)，张大嘴巴发出开阔的声音(/a/)。三种都试一遍吧！",
-      "textEn": "Closed lips = humming (/m/), tongue-to-teeth = hissing (/s/), open wide = open sound (/a/). Try all three!",
+      "text": "试试看：双唇闭合发出嗡嗡声(/m/)，舌尖抵齿发出嘶嘶声(/s/)，张大嘴巴发出开阔的声音(/ɑː/)。三种都试一遍吧！",
+      "textEn": "Closed lips = humming (/m/), tongue-to-teeth = hissing (/s/), open wide = open sound (/ɑː/). Try all three!",
       "autoShowAfterSec": 60
     }
   ],

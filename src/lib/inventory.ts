@@ -13,13 +13,13 @@ const LEVEL_UNLOCKS: LevelUnlocks[] = [
   { levelId: '001-discover-m', phonemes: ['m'], letters: [], mechanics: ['drag_to_resonate'] },
   { levelId: '002-discover-s', phonemes: ['s'], letters: [], mechanics: [] },
   { levelId: '003-sound-match', phonemes: [], letters: [], mechanics: ['sound_match'] },
-  { levelId: '004-sound-lab', phonemes: ['a'], letters: [], mechanics: ['sound_lab'] },
+  { levelId: '004-sound-lab', phonemes: ['ɑː'], letters: [], mechanics: ['sound_lab'] },
   { levelId: '005-boss-sounds', phonemes: [], letters: [], mechanics: ['mic_validate'] },
-  { levelId: '006-blend-ma', phonemes: ['m', 'a'], letters: [], mechanics: ['connect_and_blend'] },
+  { levelId: '006-blend-ma', phonemes: ['m', 'ɑː'], letters: [], mechanics: ['connect_and_blend'] },
   { levelId: '007-blend-sa', phonemes: ['s'], letters: [], mechanics: [] },
   { levelId: '008-blend-kat', phonemes: ['k', 'ae', 't'], letters: [], mechanics: ['multi_blend'] },
   { levelId: '009-invent-m', phonemes: [], letters: ['m'], mechanics: ['invent_letter'] },
-  { levelId: '010-encoding-board', phonemes: [], letters: ['s', 'a'], mechanics: ['encoding_board'] },
+  { levelId: '010-encoding-board', phonemes: [], letters: ['s', 'ɑː'], mechanics: ['encoding_board'] },
 ];
 
 // 所有关卡的有序列表

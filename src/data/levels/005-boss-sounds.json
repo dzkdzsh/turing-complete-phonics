@@ -5,15 +5,15 @@
   "title": "声音大师试炼",
   "titleEn": "Sound Master Trial",
   "subtitle": "用自己的声音证明你的发现！",
-  "learningGoal": "独立发出 /m/、/s/、/a/ 音素——Era 1 综合测试",
-  "learningGoalEn": "Independently produce /m/, /s/, /a/ phonemes — Era 1 comprehensive test",
+  "learningGoal": "独立发出 /m/、/s/、/ɑː/ 音素——Era 1 综合测试",
+  "learningGoalEn": "Independently produce /m/, /s/, /ɑː/ phonemes — Era 1 comprehensive test",
   "unlocks": "声音大师认证，解锁 Era 2",
   "unlocksMechanic": "mic_validate",
   "mechanicType": "mic_validate",
   "inputType": "mic",
   "winCondition": {
     "type": "all_resonators_active",
-    "requiredPhonemes": ["m", "s", "a"],
+    "requiredPhonemes": ["m", "s", "ɑː"],
     "maxAttempts": 5,
     "timeLimitSec": 300,
     "micConfidenceThreshold": 0.4
@@ -50,13 +50,13 @@
       "initialState": "locked"
     },
     {
-      "id": "crystal_a",
+      "id": "crystal_ɑː",
       "type": "resonator",
       "position": { "x": 824, "y": 300 },
-      "phoneme": "a",
+      "phoneme": "ɑː",
       "spriteKey": "crystal_dormant",
-      "label": "开音水晶 /a/",
-      "labelEn": "Open Crystal /a/",
+      "label": "开音水晶 /ɑː/",
+      "labelEn": "Open Crystal /ɑː/",
       "onInteractAnimation": "glow",
       "initialState": "locked"
     }
@@ -64,7 +64,7 @@
   "audioClips": [
     { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
     { "id": "s_phoneme", "file": "phonemes/s.wav", "type": "phoneme", "phoneme": "s" },
-    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" }
+    { "id": "ɑː_phoneme", "file": "phonemes/ɑː.wav", "type": "phoneme", "phoneme": "ɑː" }
   ],
   "hints": [
     {
@@ -75,8 +75,8 @@
     },
     {
       "hintIndex": 2,
-      "text": "试试看：双唇闭合发出 /m/（像在说'嗯——'），舌尖靠近牙齿发出 /s/（像蛇），张大嘴巴发出 /a/（像医生检查时那样）。",
-      "textEn": "Try: closed lips for /m/ (like humming), tongue to teeth for /s/ (like a snake), open wide for /a/ (like at the doctor).",
+      "text": "试试看：双唇闭合发出 /m/（像在说'嗯——'），舌尖靠近牙齿发出 /s/（像蛇），张大嘴巴发出 /ɑː/（像医生检查时那样）。",
+      "textEn": "Try: closed lips for /m/ (like humming), tongue to teeth for /s/ (like a snake), open wide for /ɑː/ (like at the doctor).",
       "autoShowAfterSec": 60
     }
   ],

@@ -10,16 +10,16 @@ const standardMap: Record<string, string> = {
   k: '/assets/audio/standard/k.mp3',
   m: '/assets/audio/standard/m.mp3',
   t: '/assets/audio/standard/t.mp3',
-  a: '/assets/audio/standard/ae.mp3',   // æ 短元音
-  ae: '/assets/audio/standard/ae.mp3',  // æ alias
-  ah: '/assets/audio/standard/aa_long.mp3', // ɑː 长元音
+  'ɑː': '/assets/audio/standard/aa_long.mp3', // ɑː 长元音
+  ae: '/assets/audio/standard/ae.mp3',  // æ 短元音
+  ah: '/assets/audio/standard/aa_long.mp3', // ɑː alias (legacy)
 };
 
 // 预录合成音频（人工录制真音合成）
 const BLEND_FILES: Record<string, string> = {
-  ma: '/assets/audio/blended/mɑː.mp3',
-  sa: '/assets/audio/blended/sɑː.mp3',
-  kat: '/assets/audio/blended/kæt.mp3',
+  mɑː: '/assets/audio/blended/mɑː.mp3',
+  sɑː: '/assets/audio/blended/sɑː.mp3',
+  kæt: '/assets/audio/blended/kæt.mp3',
 };
 
 // 游戏音素 → DJ分段文件路径（回退）

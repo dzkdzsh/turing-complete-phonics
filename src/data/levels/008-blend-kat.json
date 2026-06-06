@@ -126,7 +126,7 @@
     { "id": "k_phoneme", "file": "phonemes/k.wav", "type": "phoneme", "phoneme": "k" },
     { "id": "ae_phoneme", "file": "phonemes/ae.wav", "type": "phoneme", "phoneme": "ae" },
     { "id": "t_phoneme", "file": "phonemes/t.wav", "type": "phoneme", "phoneme": "t" },
-    { "id": "kat_blend", "file": "blended/kat.wav", "type": "blend" }
+    { "id": "kat_blend", "file": "blended/kæt.mp3", "type": "blend" }
   ],
   "hints": [
     {
