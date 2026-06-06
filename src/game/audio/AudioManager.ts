@@ -96,13 +96,32 @@ export class AudioManager {
     import('./PhonemeSynth').then(m => m.phonemeSynth.play(phoneme)).catch(() => {});
   }
 
+  /** 裁剪音频首尾静音，返回 { data, sampleRate } */
+  private trimSilence(buf: AudioBuffer, threshold = 0.02): Float32Array {
+    const data = buf.getChannelData(0);
+    let start = 0;
+    let end = data.length - 1;
+
+    // Find first sample above threshold
+    while (start < data.length && Math.abs(data[start]) < threshold) start++;
+    // Find last sample above threshold
+    while (end > start && Math.abs(data[end]) < threshold) end--;
+
+    // Keep a tiny buffer (5ms) of silence before/after for natural sound
+    const padSamples = Math.ceil(0.005 * buf.sampleRate);
+    start = Math.max(0, start - padSamples);
+    end = Math.min(data.length - 1, end + padSamples);
+
+    if (end <= start) return data; // no silence to trim
+    return data.subarray(start, end + 1);
+  }
+
   /** 合成音素：将多个音素音频缓冲区交叉淡入淡出拼接 */
   blendPhonemes(phonemes: string[]): AudioBuffer | null {
     const ctx = this.ensureCtx();
-    const bufs: AudioBuffer[] = [];
+    const rawBufs: { data: Float32Array; sampleRate: number }[] = [];
 
     for (const p of phonemes) {
-      // Try standard first, then DJ
       const stdUrl = standardMap[p];
       let buf: AudioBuffer | undefined;
       if (stdUrl) buf = this.buffers.get(`std_${stdUrl}`);
@@ -110,51 +129,74 @@ export class AudioManager {
         const seg = (djMap as Record<string, number>)[p];
         if (seg !== undefined) buf = this.buffers.get(`dj_${seg}`);
       }
-      if (buf) bufs.push(buf);
+      if (buf) {
+        const trimmed = this.trimSilence(buf);
+        rawBufs.push({ data: trimmed, sampleRate: buf.sampleRate });
+      }
     }
 
-    if (bufs.length === 0) return null;
-    if (bufs.length === 1) return bufs[0];
-
-    // Calculate total duration with crossfades
-    const crossfadeSec = 0.04; // 40ms crossfade
-    let totalDuration = 0;
-    for (let i = 0; i < bufs.length; i++) {
-      totalDuration += bufs[i].duration;
-      if (i < bufs.length - 1) totalDuration -= crossfadeSec;
+    if (rawBufs.length === 0) return null;
+    if (rawBufs.length === 1) {
+      const out = ctx.createBuffer(1, rawBufs[0].data.length, rawBufs[0].sampleRate);
+      out.getChannelData(0).set(rawBufs[0].data);
+      return out;
     }
 
-    const sampleRate = ctx.sampleRate;
-    const totalSamples = Math.ceil(totalDuration * sampleRate);
-    const outBuffer = ctx.createBuffer(1, totalSamples, sampleRate);
+    // Calculate total duration with crossfades (using trimmed lengths)
+    const crossfadeSec = 0.03; // 30ms crossfade
+    const outSampleRate = ctx.sampleRate;
+
+    // Resample all to output sample rate, calculate lengths
+    const resampled: Float32Array[] = [];
+    let totalLen = 0;
+    for (const raw of rawBufs) {
+      let data: Float32Array;
+      if (raw.sampleRate !== outSampleRate) {
+        const ratio = raw.sampleRate / outSampleRate;
+        const newLen = Math.round(raw.data.length / ratio);
+        data = new Float32Array(newLen);
+        for (let i = 0; i < newLen; i++) {
+          const src = i * ratio;
+          const lo = Math.floor(src);
+          const hi = Math.min(lo + 1, raw.data.length - 1);
+          data[i] = raw.data[lo] * (1 - (src - lo)) + raw.data[hi] * (src - lo);
+        }
+      } else {
+        data = raw.data;
+      }
+      resampled.push(data);
+      totalLen += data.length;
+      if (resampled.length > 1) totalLen -= Math.ceil(crossfadeSec * outSampleRate);
+    }
+
+    const outBuffer = ctx.createBuffer(1, totalLen, outSampleRate);
     const outData = outBuffer.getChannelData(0);
+    const fadeLen = Math.ceil(crossfadeSec * outSampleRate);
 
     let writePos = 0;
-    for (let i = 0; i < bufs.length; i++) {
-      const srcData = bufs[i].getChannelData(0);
+    for (let i = 0; i < resampled.length; i++) {
+      const srcData = resampled[i];
       const srcLen = srcData.length;
-      const fadeLen = Math.ceil(crossfadeSec * sampleRate);
 
       for (let s = 0; s < srcLen; s++) {
         const targetIdx = writePos + s;
-        if (targetIdx >= totalSamples) break;
+        if (targetIdx >= totalLen) break;
 
-        let gain = 1.0;
-        // Fade out at the end of each segment (except last)
-        if (i < bufs.length - 1 && s >= srcLen - fadeLen) {
-          gain = 1.0 - (s - (srcLen - fadeLen)) / fadeLen;
-        }
-        // Fade in at the beginning of each segment (except first)
+        // Crossfade region: blend previous and current
         if (i > 0 && s < fadeLen) {
-          const fadeInGain = s / fadeLen;
-          // Crossfade: add to existing data (fade out previous, fade in this)
-          outData[targetIdx] = outData[targetIdx] * (1 - fadeInGain) + srcData[s] * fadeInGain;
+          const fadeIn = s / fadeLen;
+          outData[targetIdx] = outData[targetIdx] * (1 - fadeIn) + srcData[s] * fadeIn;
           continue;
         }
 
+        // Fade out at end (except last segment)
+        let gain = 1.0;
+        if (i < resampled.length - 1 && s >= srcLen - fadeLen) {
+          gain = 1.0 - (s - (srcLen - fadeLen)) / fadeLen;
+        }
         outData[targetIdx] += srcData[s] * gain;
       }
-      writePos += srcLen - fadeLen;
+      writePos += srcLen - (i < resampled.length - 1 ? fadeLen : 0);
     }
 
     return outBuffer;
