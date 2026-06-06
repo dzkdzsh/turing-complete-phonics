@@ -145,8 +145,8 @@ export class BossGameplayScene extends GameplayScene {
     this.showRecognizingAnimation();
     await new Promise(r => setTimeout(r, 400));
 
-    // Use the exact same algorithm as the working test page
-    const result = this.analyzer.analyze(raw, 44100);
+    // Async DFT analysis — yields to event loop, no UI freeze
+    const result = await this.analyzer.analyzeAsync(raw, 44100);
 
     this.hideRecognizingAnimation();
 
