@@ -187,38 +187,46 @@ export class AudioManager {
       return out;
     }
 
-    // Tight blend: overlap each pair by 60ms with crossfade
-    const overlapSec = 0.06; // 60ms overlap
-    const overlapSamples = Math.ceil(overlapSec * outSampleRate);
+    // Truncate each phoneme to a tight core (max 200ms), then overlap heavily
+    const MAX_PHONEME_MS = 0.20; // keep only 200ms of each phoneme
+    const OVERLAP_MS = 0.12;      // overlap by 120ms
+
+    const maxSamples = Math.ceil(MAX_PHONEME_MS * outSampleRate);
+    const overlapSamples = Math.ceil(OVERLAP_MS * outSampleRate);
+
+    // Truncate to core
+    const cores = resampled.map(d => d.subarray(0, Math.min(d.length, maxSamples)));
 
     // Calculate output length
-    let totalLen = 0;
-    for (let i = 0; i < resampled.length; i++) {
-      totalLen += resampled[i].length;
-      if (i > 0) totalLen -= overlapSamples;
+    let totalLen = cores[0].length;
+    for (let i = 1; i < cores.length; i++) {
+      totalLen += cores[i].length - overlapSamples;
     }
 
     const outBuffer = ctx.createBuffer(1, totalLen, outSampleRate);
     const outData = outBuffer.getChannelData(0);
 
-    let writePos = 0;
-    for (let i = 0; i < resampled.length; i++) {
-      const srcData = resampled[i];
-      const srcLen = srcData.length;
+    // Write first phoneme fully
+    for (let s = 0; s < cores[0].length; s++) outData[s] = cores[0][s];
+    let writePos = cores[0].length;
 
-      for (let s = 0; s < srcLen; s++) {
-        const targetIdx = writePos + s;
-        if (targetIdx >= totalLen) break;
+    for (let i = 1; i < cores.length; i++) {
+      const src = cores[i];
+      // Start writing from (writePos - overlapSamples) — overlapping with previous
+      const start = writePos - overlapSamples;
 
-        if (i > 0 && s < overlapSamples) {
-          // Overlap region: crossfade with previous segment
-          const fadeIn = s / overlapSamples;
-          outData[targetIdx] = outData[targetIdx] * (1 - fadeIn) + srcData[s] * fadeIn;
+      for (let s = 0; s < src.length; s++) {
+        const idx = start + s;
+        if (idx >= totalLen) break;
+
+        if (s < overlapSamples) {
+          const fade = s / overlapSamples;
+          outData[idx] = outData[idx] * (1 - fade) + src[s] * fade;
         } else {
-          outData[targetIdx] += srcData[s];
+          outData[idx] += src[s];
         }
       }
-      writePos += srcLen - (i > 0 ? overlapSamples : 0);
+      writePos = start + src.length;
     }
 
     return outBuffer;
