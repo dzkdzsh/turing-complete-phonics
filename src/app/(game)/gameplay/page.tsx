@@ -7,15 +7,53 @@ import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { storeLevelConfig, clearLevelConfig } from '@/game/level-config-store';
 import { useGameStore } from '@/lib/game-state';
-import type { LevelConfig } from '@/types/level';
 
-const configCache: Record<string, LevelConfig> = {};
+// 编译时加载所有关卡配置（避免 dev 模式下动态 import 失败）
+import config001 from '@/data/levels/001-discover-m.json';
+import config002 from '@/data/levels/002-discover-s.json';
+import config003 from '@/data/levels/003-sound-match.json';
+import config004 from '@/data/levels/004-sound-lab.json';
+import config005 from '@/data/levels/005-boss-sounds.json';
+import config006 from '@/data/levels/006-blend-ma.json';
+import config007 from '@/data/levels/007-blend-sa.json';
+import config008 from '@/data/levels/008-blend-kat.json';
+import config009 from '@/data/levels/009-invent-m.json';
+import config010 from '@/data/levels/010-encoding-board.json';
+import config011 from '@/data/levels/011-spell-cvc.json';
+import config012 from '@/data/levels/012-spell-cvcc.json';
+import config013 from '@/data/levels/013-spell-digraph.json';
+import config014 from '@/data/levels/014-spell-long.json';
+import config015 from '@/data/levels/015-spell-boss.json';
+import config016 from '@/data/levels/016-memory-cvc.json';
+import config017 from '@/data/levels/017-memory-blend.json';
+import config018 from '@/data/levels/018-memory-sight.json';
+import config019 from '@/data/levels/019-memory-boss.json';
+import config020 from '@/data/levels/020-sentence-simple.json';
+import config023 from '@/data/levels/023-chinese-pinyin.json';
+import config024 from '@/data/levels/024-chinese-radical.json';
+import config025 from '@/data/levels/025-chinese-poem.json';
+import config026 from '@/data/levels/026-chinese-boss.json';
+import config027 from '@/data/levels/027-history-dynasty.json';
+import config028 from '@/data/levels/028-history-figures.json';
+import config029 from '@/data/levels/029-history-events.json';
 
-async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
-  if (configCache[levelId]) return configCache[levelId];
-  try { const mod = await import(`@/data/levels/${levelId}.json`); configCache[levelId] = mod.default || mod; return configCache[levelId]; }
-  catch { return null; }
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const configMap: Record<string, any> = {
+  '001-discover-m': config001, '002-discover-s': config002,
+  '003-sound-match': config003, '004-sound-lab': config004,
+  '005-boss-sounds': config005, '006-blend-ma': config006,
+  '007-blend-sa': config007, '008-blend-kat': config008,
+  '009-invent-m': config009, '010-encoding-board': config010,
+  '011-spell-cvc': config011, '012-spell-cvcc': config012,
+  '013-spell-digraph': config013, '014-spell-long': config014,
+  '015-spell-boss': config015, '016-memory-cvc': config016,
+  '017-memory-blend': config017, '018-memory-sight': config018,
+  '019-memory-boss': config019, '020-sentence-simple': config020,
+  '023-chinese-pinyin': config023, '024-chinese-radical': config024,
+  '025-chinese-poem': config025, '026-chinese-boss': config026,
+  '027-history-dynasty': config027, '028-history-figures': config028,
+  '029-history-events': config029,
+};
 
 const mechanicHints: Record<string, string> = {
   drag_to_resonate: '拖拽声音生物到共振器上进行分析',
@@ -32,37 +70,46 @@ function GameplayPageContent() {
   const searchParams = useSearchParams();
   const levelId = searchParams.get('level') || '001-discover-m';
   const { setScreen } = useGameStore();
-  const [config, setConfig] = useState<LevelConfig | null>(null);
+  const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 清理前一个关卡的残留状态
   useEffect(() => { clearLevelConfig(); }, [levelId]);
 
   useEffect(() => {
     setLoading(true);
-    (async () => {
-      const cfg = await loadLevelConfig(levelId);
-      if (cfg) storeLevelConfig(levelId, cfg);
-      setConfig(cfg); setLoading(false);
-    })();
+    setError(null);
+
+    const cfg = configMap[levelId] ?? null;
+    if (cfg) {
+      storeLevelConfig(levelId, cfg);
+    } else {
+      console.warn('[GameplayPage] 关卡配置未找到:', levelId);
+      setError(`关卡 "${levelId}" 不存在`);
+    }
+    setConfig(cfg);
+    setLoading(false);
   }, [levelId]);
 
   const handleExit = useCallback(() => {
     setScreen('level-select');
     clearLevelConfig();
-    window.location.href='/level-select?era=1';
+    window.location.href = '/level-select?era=1';
   }, [setScreen]);
 
   const handleBackToMap = useCallback(() => {
     setScreen('era-map');
     clearLevelConfig();
-    window.location.href='/era-select';
+    window.location.href = '/era-select';
   }, [setScreen]);
 
-  if (loading || !config) return (<div className="flex items-center justify-center h-screen" style={{background:'#f5f3f0'}}><p className="text-[#8b7355]">加载关卡中...</p></div>);
+  if (loading) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><p className="text-[#8b7355]">加载关卡中...</p></div>);
+
+  if (error) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><div className="text-center"><p className="text-[#ef4444] mb-4">{error}</p><button onClick={() => { setScreen('era-map'); window.location.href = '/era-select'; }} className="text-[#d4912a] underline">返回时代地图</button></div></div>);
+
+  if (!config) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><p className="text-[#8b7355]">关卡数据异常，请返回重试</p></div>);
 
   const isBoss = config.isBossLevel || config.mechanicType === 'mic_validate';
-  // forceReload key 确保每次进关卡都重建 Phaser
   return (
     <GameLayout levelKey={levelId}>
       <HUD levelId={levelId} isBoss={isBoss} title={config.title} introText={config.introText}
@@ -72,5 +119,5 @@ function GameplayPageContent() {
 }
 
 export default function GameplayPage() {
-  return (<Suspense fallback={<div className="flex items-center justify-center h-screen" style={{background:'#f5f3f0'}}><p className="text-[#8b7355]">加载中...</p></div>}><GameplayPageContent /></Suspense>);
+  return (<Suspense fallback={<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><p className="text-[#8b7355]">加载中...</p></div>}><GameplayPageContent /></Suspense>);
 }

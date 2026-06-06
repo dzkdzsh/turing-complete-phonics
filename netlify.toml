@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "NEXT_OUTPUT_MODE=export npm run build"
   publish = "dist"
 
 [[redirects]]
