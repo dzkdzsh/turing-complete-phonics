@@ -1,4 +1,4 @@
-// BossGameplayScene —— Boss 关场景（集成麦克风音素验证 + wav2vec2 AI 评分）
+// BossGameplayScene —— Boss 关场景（频谱分析音素验证）
 
 import * as Phaser from 'phaser';
 import { SCENES } from '@/lib/constants';
@@ -10,25 +10,20 @@ import { MicrophoneInput } from '../input/MicrophoneInput';
 import { PhonemeAnalyzer } from '../input/PhonemeAnalyzer';
 import { AudioManager } from '../audio/AudioManager';
 import { Resonator } from '../objects/Resonator';
-import { Wav2vec2ModelLoader } from '../input/Wav2vec2ModelLoader';
-import { Wav2vec2Analyzer } from '../input/Wav2vec2Analyzer';
-import { AudioBufferRecorder } from '../input/AudioBufferRecorder';
-import { isDirectMapped } from '../input/PhonemeTokenMap';
+
+const RECORD_DURATION_MS = 1500;
 
 export class BossGameplayScene extends GameplayScene {
   private mic: MicrophoneInput | null = null;
   private analyzer: PhonemeAnalyzer | null = null;
-  private wav2vec2Analyzer: Wav2vec2Analyzer | null = null;
-  private modelLoader: Wav2vec2ModelLoader;
   private currentTarget: string | null = null;
   private requiredPhonemes: string[] = [];
   private statusText: Phaser.GameObjects.Text | null = null;
   private crystalLights: Map<string, Phaser.GameObjects.Graphics> = new Map();
-  private useAI = false;
+  private isRecording = false;
 
   constructor() {
     super(SCENES.BOSS_GAMEPLAY);
-    this.modelLoader = Wav2vec2ModelLoader.getInstance();
   }
 
   init(data: { levelConfig: LevelConfig }) {
@@ -41,14 +36,14 @@ export class BossGameplayScene extends GameplayScene {
 
     this.requiredPhonemes = this.levelConfig.winCondition.requiredPhonemes || ['m', 's', 'a'];
     this.mic = new MicrophoneInput();
-    this.analyzer = new PhonemeAnalyzer(); // FFT fallback
+    this.analyzer = new PhonemeAnalyzer();
 
-    const { width, height } = this.scale;
+    const { width } = this.scale;
     this.add.text(width / 2, 56, '★ 声音大师试炼 ★', {
       fontSize: '18px', color: '#444444', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
-    this.statusText = this.add.text(width / 2, 82, '正在唤醒语音引擎...', {
+    this.statusText = this.add.text(width / 2, 82, '准备好了！点击水晶开始试炼', {
       fontSize: '14px', color: '#444444', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
@@ -57,65 +52,6 @@ export class BossGameplayScene extends GameplayScene {
 
     eventBus.on(GameEvents.MIC_START, () => this.startMicForNext());
     eventBus.on(GameEvents.MIC_STOP, () => this.mic?.stop());
-
-    // 预加载 wav2vec2 模型
-    this.preloadModel();
-  }
-
-  private skipButton: Phaser.GameObjects.Container | null = null;
-
-  private async preloadModel() {
-    // 显示跳过按钮
-    const { width } = this.scale;
-    this.showSkipButton(width / 2, 120);
-
-    try {
-      await this.modelLoader.ensureLoaded((pct: number) => {
-        if (this.statusText && pct < 1) {
-          this.statusText.setText(`AI语音引擎加载中... ${Math.round(pct * 100)}%`);
-        }
-      });
-      this.hideSkipButton();
-      this.wav2vec2Analyzer = new Wav2vec2Analyzer(this.modelLoader);
-      this.useAI = true;
-      if (this.statusText) {
-        this.statusText.setText('AI引擎就绪！点击水晶开始试炼');
-      }
-    } catch (err) {
-      console.warn('[BossGameplay] wav2vec2 model failed to load, using FFT fallback:', err);
-      this.hideSkipButton();
-      this.useAI = false;
-      if (this.statusText) {
-        this.statusText.setText('基础模式：点击水晶开始');
-      }
-    }
-  }
-
-  private showSkipButton(x: number, y: number) {
-    const bg = this.add.graphics();
-    bg.fillStyle(0x000000, 0.3);
-    bg.fillRoundedRect(-80, -16, 160, 32, 16);
-
-    const txt = this.add.text(0, 0, '跳过，用基础模式 →', {
-      fontSize: '13px', color: '#d4912a', fontFamily: 'sans-serif',
-    }).setOrigin(0.5);
-
-    this.skipButton = this.add.container(x, y, [bg, txt]);
-    this.skipButton.setSize(160, 32);
-    this.skipButton.setInteractive({ cursor: 'pointer' });
-    this.skipButton.on('pointerdown', () => {
-      this.modelLoader.cancel();
-      this.hideSkipButton();
-    });
-    this.skipButton.on('pointerover', () => txt.setColor('#f0c46a'));
-    this.skipButton.on('pointerout', () => txt.setColor('#d4912a'));
-  }
-
-  private hideSkipButton() {
-    if (this.skipButton) {
-      this.skipButton.destroy();
-      this.skipButton = null;
-    }
   }
 
   private createCrystalLights() {
@@ -134,89 +70,94 @@ export class BossGameplayScene extends GameplayScene {
       if (obj instanceof Resonator && obj.isCrystal && obj.phoneme) {
         obj.removeAllListeners('pointerdown');
         obj.setInteractive({ cursor: 'pointer' });
-        obj.on('pointerdown', () => this.onCrystalClick(obj.phoneme, obj.objectId));
+        obj.on('pointerdown', () => this.onCrystalClick(obj.phoneme));
       }
     }
   }
 
-  private async onCrystalClick(phoneme: string, _objectId: string) {
+  private async onCrystalClick(phoneme: string) {
+    if (this.isRecording) return;
     if (this.completedPhonemes.includes(phoneme)) {
-      this.showStatus(`/${phoneme}/水晶已激活 ✓ 试试下一颗`, '#0a5c3f');
-      return;
-    }
-
-    // 模型还在加载中
-    if (!this.modelLoader.isLoaded && isDirectMapped(phoneme)) {
-      this.showStatus('语音引擎加载中，请稍候...', '#f59e0b');
+      this.showStatus(`/${phoneme}/ 水晶已激活 ✓`, '#0a5c3f');
       return;
     }
 
     this.currentTarget = phoneme;
-    this.showStatus(`🎤 请对着麦克风说 /${phoneme}/ ...`, '#444444');
+    this.showStatus(`🎤 请对着麦克风读 /${phoneme}/ ...`, '#444444');
 
     try {
       await this.mic!.start();
+      this.isRecording = true;
 
-      if (this.useAI && isDirectMapped(phoneme) && this.wav2vec2Analyzer) {
-        // === wav2vec2 AI 模式：缓冲 → 批量分析 ===
-        const recorder = new AudioBufferRecorder(1.5, 44100);
+      const chunks: Float32Array[] = [];
+      this.mic!.startListening((_freq, timeData) => {
+        chunks.push(new Float32Array(timeData));
+        // Auto-stop after ~1.5s
+        const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+        if (totalLen >= 44100 * (RECORD_DURATION_MS / 1000)) {
+          this.mic!.stop();
+          this.processBuffer(chunks, phoneme);
+        }
+      });
 
-        this.mic!.startListening((_freq, timeData) => {
-          recorder.append(timeData);
-          if (recorder.isFull()) {
-            this.mic!.stop();
-            this.processAIRecording(recorder.getData(), phoneme);
-          }
-        });
-
-        // 安全超时：2.5 秒后自动停止
-        this.time.delayedCall(2500, () => {
-          if (this.mic?.isActive && this.currentTarget === phoneme) {
-            this.mic!.stop();
-            if (!recorder.isEmpty()) {
-              this.processAIRecording(recorder.getData(), phoneme);
-            } else {
-              this.showStatus('没有检测到声音，请再试试', '#f59e0b');
-            }
-          }
-        });
-      } else {
-        // === FFT 降级模式 ===
-        this.fallbackToFFTAnalysis(phoneme);
-      }
+      // Safety timeout
+      this.time.delayedCall(RECORD_DURATION_MS + 800, () => {
+        if (this.isRecording && this.currentTarget === phoneme) {
+          this.mic!.stop();
+          this.processBuffer(chunks, phoneme);
+        }
+      });
     } catch {
       this.showStatus('麦克风启动失败！请允许浏览器使用麦克风权限', '#7a1a1a');
+      this.isRecording = false;
     }
   }
 
-  private async processAIRecording(audio: Float32Array, targetPhoneme: string) {
-    if (!this.wav2vec2Analyzer) return;
+  private processBuffer(chunks: Float32Array[], targetPhoneme: string) {
+    this.isRecording = false;
+    if (!this.analyzer) return;
 
-    const result = await this.wav2vec2Analyzer.analyze(audio, 44100, targetPhoneme);
-    if (!result) {
-      this.showStatus('分析失败，请重试', '#ef4444');
+    // Combine chunks
+    const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+    if (totalLen === 0) {
+      this.showStatus('未捕获到音频，请检查麦克风', '#ef4444');
       return;
     }
 
-    if (result.isSilence) {
+    const raw = new Float32Array(totalLen);
+    let off = 0;
+    for (const c of chunks) { raw.set(c, off); off += c.length; }
+
+    // Quick RMS check
+    let rmsSum = 0;
+    for (let i = 0; i < raw.length; i++) rmsSum += raw[i] * raw[i];
+    const rms = Math.sqrt(rmsSum / raw.length);
+
+    if (rms < 0.005) {
+      this.showStatus('音量过低，请靠近麦克风再试', '#f59e0b');
+      return;
+    }
+
+    // Analyze with spectral features
+    const result = this.analyzer.analyzeBuffer(raw);
+    console.log('[Boss] target=/' + targetPhoneme + '/ best=/' + (result?.phoneme || '?') +
+      '/ conf=' + ((result?.confidence || 0) * 100).toFixed(0) + '% RMS=' + rms.toFixed(4));
+
+    if (!result) {
       this.showStatus('没有检测到清晰的声音，请再试试', '#f59e0b');
-    } else if (result.isCorrect) {
+      return;
+    }
+
+    if (result.phoneme === targetPhoneme && result.confidence > 0.3) {
       this.onPhonemeMatched(targetPhoneme);
-    } else {
+    } else if (result.confidence > 0.2) {
       this.showStatus(
-        `听起来像 /${result.bestGuess}/ 而不是 /${targetPhoneme}/，请再试一次`,
+        `听起来像 /${result.phoneme}/ 而不是 /${targetPhoneme}/，请重试`,
         '#ef4444'
       );
+    } else {
+      this.showStatus('不太确定，请再大声/清晰一点', '#f59e0b');
     }
-  }
-
-  private fallbackToFFTAnalysis(phoneme: string) {
-    this.mic!.startListening((_freq, timeData) => {
-      const result = this.analyzer!.analyze(new Uint8Array(0), timeData);
-      if (result && result.phoneme === this.currentTarget && result.confidence > 0.55) {
-        this.onPhonemeMatched(result.phoneme);
-      }
-    });
   }
 
   private onPhonemeMatched(phoneme: string) {
@@ -261,7 +202,7 @@ export class BossGameplayScene extends GameplayScene {
 
   private startMicForNext() {
     const next = this.requiredPhonemes.find((p) => !this.completedPhonemes.includes(p));
-    if (next) this.onCrystalClick(next, '');
+    if (next) this.onCrystalClick(next);
   }
 
   private showStatus(msg: string, color: string) {
