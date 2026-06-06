@@ -1,9 +1,30 @@
 // Wav2vec2ModelLoader —— 懒加载 wav2vec2 ONNX 模型，全局单例
-// 使用 @xenova/transformers 的 pipeline API（动态 import，浏览器端按需加载）
+// 模型通过 jsdelivr CDN <script> 标签加载，挂载为 window.Transformers
 // 模型 ~95MB，首次下载后缓存至浏览器 IndexedDB
+// CDN script: https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Pipeline = any;
+
+declare global {
+  interface Window {
+    Transformers?: {
+      pipeline: (task: string, model: string, opts?: Record<string, unknown>) => Promise<Pipeline>;
+    };
+  }
+}
+
+/** 等待 CDN 脚本加载完成 */
+function waitForTransformers(timeoutMs = 15000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Transformers) { resolve(); return; }
+    const start = Date.now();
+    const check = setInterval(() => {
+      if (window.Transformers) { clearInterval(check); resolve(); return; }
+      if (Date.now() - start > timeoutMs) { clearInterval(check); reject(new Error('Transformers CDN load timeout')); }
+    }, 100);
+  });
+}
 
 export class Wav2vec2ModelLoader {
   private static instance: Wav2vec2ModelLoader;
@@ -26,7 +47,7 @@ export class Wav2vec2ModelLoader {
   get loadProgress(): number { return this._loadProgress; }
   get loadError(): string | null { return this._loadError; }
 
-  /** 幂等加载：已加载直接返回，加载中等待 */
+  /** 幂等加载：等待 CDN 脚本就绪 → 创建 pipeline → 下载模型 */
   async ensureLoaded(onProgress?: (pct: number) => void): Promise<void> {
     if (this._isLoaded) return;
 
@@ -43,16 +64,20 @@ export class Wav2vec2ModelLoader {
     this._loadError = null;
 
     try {
-      // 动态 import —— 仅在浏览器端按需加载，避免 SSR / Turbopack 打包问题
-      const { pipeline } = await import('@xenova/transformers');
-      this._pipeline = await pipeline(
+      // Step 1: 等待 CDN 脚本加载
+      onProgress?.(0.05);
+      await waitForTransformers();
+
+      // Step 2: 创建 pipeline（触发模型下载）
+      onProgress?.(0.1);
+      this._pipeline = await window.Transformers!.pipeline(
         'automatic-speech-recognition',
         'Xenova/wav2vec2-base-960h',
         {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           progress_callback: (info: any) => {
             if (info.status === 'progress' && typeof info.progress === 'number') {
-              this._loadProgress = info.progress / 100;
+              this._loadProgress = 0.1 + (info.progress / 100) * 0.9;
               onProgress?.(this._loadProgress);
             }
           },
