@@ -1,7 +1,7 @@
-// PreloadScene —— 轮询 window 上的关卡配置，跳转到游玩场景
+// PreloadScene —— 轮询 window 上的关卡配置，静默跳转到游玩场景
 
 import * as Phaser from 'phaser';
-import { SCENES, GAME_WIDTH, GAME_HEIGHT } from '@/lib/constants';
+import { SCENES } from '@/lib/constants';
 import type { LevelConfig } from '@/types/level';
 
 interface PendingConfig {
@@ -20,7 +20,6 @@ function readConfig(): PendingConfig | null {
 }
 
 export class PreloadScene extends Phaser.Scene {
-  private waitText!: Phaser.GameObjects.Text;
   private retries = 0;
 
   constructor() {
@@ -28,29 +27,24 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    this.waitText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '加载关卡配置...', {
-        fontSize: '18px', color: '#444444', fontFamily: 'sans-serif',
-      })
-      .setOrigin(0.5);
-
+    // 直接跳转到游玩场景，配置由 GameplayScene 自行等待
     this.tryLoad();
   }
 
   private tryLoad() {
     const cfg = readConfig();
     if (cfg) {
-      this.waitText.setText('加载完成！');
       const targetScene = cfg.config.isBossLevel
         ? SCENES.BOSS_GAMEPLAY
         : SCENES.GAMEPLAY;
-      this.time.delayedCall(300, () => {
-        this.scene.start(targetScene, { levelConfig: cfg.config });
-      });
+      this.scene.start(targetScene, { levelConfig: cfg.config });
     } else {
       this.retries++;
-      this.waitText.setText('等待关卡数据... (' + this.retries + ')');
-      this.time.delayedCall(200, () => this.tryLoad());
+      if (this.retries > 50) {
+        // 5秒后仍无配置，显示提示
+        this.add.text(512, 300, '正在进入关卡…', { fontSize: '14px', color: '#666666', fontFamily: 'sans-serif' }).setOrigin(0.5);
+      }
+      this.time.delayedCall(100, () => this.tryLoad());
     }
   }
 }
