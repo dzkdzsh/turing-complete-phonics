@@ -96,14 +96,85 @@ export class AudioManager {
     import('./PhonemeSynth').then(m => m.phonemeSynth.play(phoneme)).catch(() => {});
   }
 
-  /** 播放合成音 — DJ分段逐个播放 */
+  /** 合成音素：将多个音素音频缓冲区交叉淡入淡出拼接 */
+  blendPhonemes(phonemes: string[]): AudioBuffer | null {
+    const ctx = this.ensureCtx();
+    const bufs: AudioBuffer[] = [];
+
+    for (const p of phonemes) {
+      // Try standard first, then DJ
+      const stdUrl = standardMap[p];
+      let buf: AudioBuffer | undefined;
+      if (stdUrl) buf = this.buffers.get(`std_${stdUrl}`);
+      if (!buf) {
+        const seg = (djMap as Record<string, number>)[p];
+        if (seg !== undefined) buf = this.buffers.get(`dj_${seg}`);
+      }
+      if (buf) bufs.push(buf);
+    }
+
+    if (bufs.length === 0) return null;
+    if (bufs.length === 1) return bufs[0];
+
+    // Calculate total duration with crossfades
+    const crossfadeSec = 0.04; // 40ms crossfade
+    let totalDuration = 0;
+    for (let i = 0; i < bufs.length; i++) {
+      totalDuration += bufs[i].duration;
+      if (i < bufs.length - 1) totalDuration -= crossfadeSec;
+    }
+
+    const sampleRate = ctx.sampleRate;
+    const totalSamples = Math.ceil(totalDuration * sampleRate);
+    const outBuffer = ctx.createBuffer(1, totalSamples, sampleRate);
+    const outData = outBuffer.getChannelData(0);
+
+    let writePos = 0;
+    for (let i = 0; i < bufs.length; i++) {
+      const srcData = bufs[i].getChannelData(0);
+      const srcLen = srcData.length;
+      const fadeLen = Math.ceil(crossfadeSec * sampleRate);
+
+      for (let s = 0; s < srcLen; s++) {
+        const targetIdx = writePos + s;
+        if (targetIdx >= totalSamples) break;
+
+        let gain = 1.0;
+        // Fade out at the end of each segment (except last)
+        if (i < bufs.length - 1 && s >= srcLen - fadeLen) {
+          gain = 1.0 - (s - (srcLen - fadeLen)) / fadeLen;
+        }
+        // Fade in at the beginning of each segment (except first)
+        if (i > 0 && s < fadeLen) {
+          const fadeInGain = s / fadeLen;
+          // Crossfade: add to existing data (fade out previous, fade in this)
+          outData[targetIdx] = outData[targetIdx] * (1 - fadeInGain) + srcData[s] * fadeInGain;
+          continue;
+        }
+
+        outData[targetIdx] += srcData[s] * gain;
+      }
+      writePos += srcLen - fadeLen;
+    }
+
+    return outBuffer;
+  }
+
+  /** 播放合成音 — 优先交叉淡入淡出合成，回退到逐个播放 */
   playBlend(blendId: string) {
     const fallback: Record<string, string[]> = {
-      ma: ['m', 'a'], sa: ['s', 'a'], kat: ['k', 'a', 't'], sh: ['sh'],
+      ma: ['m', 'a'], sa: ['s', 'a'], kat: ['k', 'ae', 't'],
     };
-    const seq = fallback[blendId];
-    if (seq) {
-      seq.forEach((p, i) => { setTimeout(() => this.playPhoneme(p), i * 200); });
+    const phonemes = fallback[blendId];
+    if (!phonemes) return;
+
+    // Try real audio blending first
+    const blended = this.blendPhonemes(phonemes);
+    if (blended) {
+      this.playBuffer(blended);
+    } else {
+      // Fallback: sequential playback
+      phonemes.forEach((p, i) => { setTimeout(() => this.playPhoneme(p), i * 200); });
     }
   }
 
