@@ -2,13 +2,12 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import HUD from '@/components/game/HUD';
 import { storeLevelConfig, clearLevelConfig } from '@/game/level-config-store';
 import { useGameStore } from '@/lib/game-state';
 
-// 编译时加载所有关卡配置（避免 dev 模式下动态 import 失败）
 import config001 from '@/data/levels/001-discover-m.json';
 import config002 from '@/data/levels/002-discover-s.json';
 import config003 from '@/data/levels/003-sound-match.json';
@@ -67,28 +66,16 @@ const mechanicHints: Record<string, string> = {
 };
 
 function GameplayPageContent() {
-  const searchParams = useSearchParams();
-  const levelId = searchParams.get('level') || '001-discover-m';
+  const sp = useSearchParams();
+  const levelId = sp.get('level') || '001-discover-m';
   const { setScreen } = useGameStore();
-  const [config, setConfig] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { clearLevelConfig(); }, [levelId]);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-
+  // Synchronously resolve config — no useEffect needed
+  const config = useMemo(() => {
+    clearLevelConfig();
     const cfg = configMap[levelId] ?? null;
-    if (cfg) {
-      storeLevelConfig(levelId, cfg);
-    } else {
-      console.warn('[GameplayPage] 关卡配置未找到:', levelId);
-      setError(`关卡 "${levelId}" 不存在`);
-    }
-    setConfig(cfg);
-    setLoading(false);
+    if (cfg) storeLevelConfig(levelId, cfg);
+    return cfg;
   }, [levelId]);
 
   const handleExit = useCallback(() => {
@@ -103,11 +90,7 @@ function GameplayPageContent() {
     window.location.href = '/era-select';
   }, [setScreen]);
 
-  if (loading) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><p className="text-[#8b7355]">加载关卡中...</p></div>);
-
-  if (error) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><div className="text-center"><p className="text-[#ef4444] mb-4">{error}</p><button onClick={() => { setScreen('era-map'); window.location.href = '/era-select'; }} className="text-[#d4912a] underline">返回时代地图</button></div></div>);
-
-  if (!config) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><p className="text-[#8b7355]">关卡数据异常，请返回重试</p></div>);
+  if (!config) return (<div className="flex items-center justify-center h-screen" style={{ background: '#f5f3f0' }}><div className="text-center"><p className="text-[#ef4444] mb-4">关卡 "{levelId}" 不存在</p><button onClick={() => { setScreen('era-map'); window.location.href = '/era-select'; }} className="text-[#d4912a] underline">返回时代地图</button></div></div>);
 
   const isBoss = config.isBossLevel || config.mechanicType === 'mic_validate';
   return (

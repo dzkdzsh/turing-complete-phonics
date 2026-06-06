@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "game-engine": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/game-engine/SKILL.md",
+      "computedHash": "20057f62cf7a8b2d9f940b3de0b18e5426e8f4bb50e236d36b1033aa0d42c4d8"
+    },
+    "web-audio-api": {
+      "source": "martinholovsky/claude-skills-generator",
+      "sourceType": "github",
+      "skillPath": "skills/web-audio-api/SKILL.md",
+      "computedHash": "5547d3ef64fecb0d0740e16ffe18c0b3379708ef4c4cf016efc0cf50e19cf3e5"
+    },
+    "web-development": {
+      "source": "tencentcloudbase/skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-development/SKILL.md",
+      "computedHash": "68b6f78c1dde333d7b998ba5d0fbec8fdc2a1a7123bb7eed510dce781eb16d87"
+    }
+  }
+}

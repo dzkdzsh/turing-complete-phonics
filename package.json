@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:netlify": "cross-env NEXT_OUTPUT_MODE=export next build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
