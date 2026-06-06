@@ -1,0 +1,17 @@
+{
+  "levelId": "011-spell-cvc",
+  "levelNumber": 1, "era": 4,
+  "title": "CVC 拼词", "titleEn": "CVC Spelling",
+  "subtitle": "听到词，拼出来！",
+  "learningGoal": "听音拼写 CVC 单词（辅音-元音-辅音）",
+  "mechanicType": "hear_and_spell", "inputType": "mouse",
+  "winCondition": { "type": "word_spelled", "maxAttempts": 99 },
+  "difficulty": 1, "isBossLevel": false, "requiresMic": false,
+  "words": ["cat", "dog", "sit", "bus"],
+  "gameObjects": [],
+  "audioClips": [],
+  "hints": [{ "hintIndex": 1, "text": "听发音，把字母拖到对应的槽位里拼出单词！", "autoShowAfterSec": 20 }],
+  "introText": "欢迎来到拼写工坊！从现在开始，你要逆向操作——听到一个完整的单词，然后用字母把它拼出来。准备好了吗？第一组：简单的三个字母词。",
+  "victoryText": "太棒了！你成功拼出了 CVC 单词。辅音-元音-辅音是英语中最基础的拼写模式。",
+  "prerequisiteLevels": ["010-encoding-board"], "requiredStarsToUnlock": 0
+}

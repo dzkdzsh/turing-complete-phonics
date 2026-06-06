@@ -10,14 +10,16 @@ import { useGameStore } from '@/lib/game-state';
 import type { LevelConfig } from '@/types/level';
 
 const configCache: Record<string, LevelConfig> = {};
-const LOAD_TIMEOUT_MS = 12000; // 12s timeout for level config loading
+const LOAD_TIMEOUT_MS = 8000; // 12s timeout for level config loading
 
 async function loadLevelConfig(levelId: string): Promise<LevelConfig | null> {
   if (configCache[levelId]) return configCache[levelId];
   try {
-    const mod = await import(`@/data/levels/${levelId}.json`);
-    configCache[levelId] = mod.default || mod;
-    return configCache[levelId];
+    const res = await fetch(`/data/levels/${levelId}.json`);
+    if (!res.ok) return null;
+    const cfg = await res.json();
+    configCache[levelId] = cfg;
+    return cfg;
   } catch { return null; }
 }
 

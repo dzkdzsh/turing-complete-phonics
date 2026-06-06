@@ -1,0 +1,103 @@
+{
+  "levelId": "005-boss-sounds",
+  "levelNumber": 5,
+  "era": 1,
+  "title": "声音大师试炼",
+  "titleEn": "Sound Master Trial",
+  "subtitle": "用自己的声音证明你的发现！",
+  "learningGoal": "独立发出 /m/、/s/、/a/ 音素——Era 1 综合测试",
+  "learningGoalEn": "Independently produce /m/, /s/, /a/ phonemes — Era 1 comprehensive test",
+  "unlocks": "声音大师认证，解锁 Era 2",
+  "unlocksMechanic": "mic_validate",
+  "mechanicType": "mic_validate",
+  "inputType": "mic",
+  "winCondition": {
+    "type": "all_resonators_active",
+    "requiredPhonemes": ["m", "s", "a"],
+    "maxAttempts": 5,
+    "timeLimitSec": 300,
+    "micConfidenceThreshold": 0.6
+  },
+  "difficulty": 3,
+  "estimatedDurationSec": 240,
+  "isBossLevel": true,
+  "requiresMic": true,
+  "gameScene": {
+    "background": "era1_boss_temple",
+    "ambientSound": "ambient_temple"
+  },
+  "gameObjects": [
+    {
+      "id": "crystal_m",
+      "type": "resonator",
+      "position": { "x": 200, "y": 300 },
+      "phoneme": "m",
+      "spriteKey": "crystal_dormant",
+      "label": "嗡音水晶 /m/",
+      "labelEn": "Hum Crystal /m/",
+      "onInteractAnimation": "glow",
+      "initialState": "locked"
+    },
+    {
+      "id": "crystal_s",
+      "type": "resonator",
+      "position": { "x": 512, "y": 300 },
+      "phoneme": "s",
+      "spriteKey": "crystal_dormant",
+      "label": "嘶音水晶 /s/",
+      "labelEn": "Hiss Crystal /s/",
+      "onInteractAnimation": "glow",
+      "initialState": "locked"
+    },
+    {
+      "id": "crystal_a",
+      "type": "resonator",
+      "position": { "x": 824, "y": 300 },
+      "phoneme": "a",
+      "spriteKey": "crystal_dormant",
+      "label": "开音水晶 /a/",
+      "labelEn": "Open Crystal /a/",
+      "onInteractAnimation": "glow",
+      "initialState": "locked"
+    }
+  ],
+  "audioClips": [
+    { "id": "m_phoneme", "file": "phonemes/m.wav", "type": "phoneme", "phoneme": "m" },
+    { "id": "s_phoneme", "file": "phonemes/s.wav", "type": "phoneme", "phoneme": "s" },
+    { "id": "a_phoneme", "file": "phonemes/a.wav", "type": "phoneme", "phoneme": "a" }
+  ],
+  "hints": [
+    {
+      "hintIndex": 1,
+      "text": "还记得你在声音实验室里学到的东西吗？点击一颗水晶，然后用你的嘴巴模仿对应的口型，对它发出声音！",
+      "textEn": "Remember what you learned in the Sound Lab? Click a crystal, then use your mouth to make the matching sound!",
+      "autoShowAfterSec": 20
+    },
+    {
+      "hintIndex": 2,
+      "text": "试试看：双唇闭合发出 /m/（像在说'嗯——'），舌尖靠近牙齿发出 /s/（像蛇），张大嘴巴发出 /a/（像医生检查时那样）。",
+      "textEn": "Try: closed lips for /m/ (like humming), tongue to teeth for /s/ (like a snake), open wide for /a/ (like at the doctor).",
+      "autoShowAfterSec": 60
+    }
+  ],
+  "failureModes": [
+    {
+      "description": "麦克风未检测到有效声音",
+      "descriptionEn": "No valid sound detected by microphone",
+      "triggerCondition": "silence",
+      "hintIndex": 1
+    },
+    {
+      "description": "发出的音素与目标不匹配",
+      "descriptionEn": "Produced phoneme doesn't match target",
+      "triggerCondition": "wrong_phoneme",
+      "hintIndex": 2
+    }
+  ],
+  "introText": "试炼神殿的门在你面前打开。三颗远古水晶沉睡在石台上——它们只对特定的人声产生共鸣。用你在实验室中学到的知识，激活所有三颗水晶！点击一颗水晶，然后对它说出对应的声音。",
+  "introTextEn": "The trial temple doors open before you. Three ancient crystals rest on stone pedestals — they resonate only to specific human voice frequencies. Use what you learned in the Sound Lab. Click a crystal and speak the matching sound.",
+  "victoryText": "三颗水晶全部被点亮！你用自己身体制造的声音激活了远古科技。你不仅是被动的观察者——你就是声音的制造者。Era 1 完成：声音世界已被征服。笔记本提示：'声音可以组合'——前往 Era 2。",
+  "victoryTextEn": "All three crystals light up! You activated ancient technology with your own voice. You're not just an observer — you are a sound maker. Era 1 complete: The Sound World conquered. Notebook hint: 'Sounds can be combined' — proceed to Era 2.",
+  "prerequisiteLevels": ["004-sound-lab"],
+  "requiredStarsToUnlock": 0
+}
