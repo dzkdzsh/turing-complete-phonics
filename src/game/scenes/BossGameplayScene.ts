@@ -6,6 +6,7 @@ import { GameplayScene } from './GameplayScene';
 import { GameEvents } from '@/types/events';
 import type { LevelConfig } from '@/types/level';
 import { eventBus } from '../event-bus';
+import { MicrophoneInput } from '../input/MicrophoneInput';
 import { PhonemeAnalyzer } from '../input/PhonemeAnalyzer';
 import { AudioManager } from '../audio/AudioManager';
 import { Resonator } from '../objects/Resonator';
@@ -13,6 +14,7 @@ import { Resonator } from '../objects/Resonator';
 const MAX_RECORD_SEC = 10;
 
 export class BossGameplayScene extends GameplayScene {
+  private mic: MicrophoneInput | null = null;
   private analyzer: PhonemeAnalyzer | null = null;
   private currentTarget: string | null = null;
   private requiredPhonemes: string[] = [];
@@ -20,12 +22,7 @@ export class BossGameplayScene extends GameplayScene {
   private crystalLights: Map<string, Phaser.GameObjects.Graphics> = new Map();
 
   // Recording state
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioCtx: AudioContext | null = null;
-  private analyserNode: AnalyserNode | null = null;
-  private audioSampleRate = 44100;
   private freqFrames: Uint8Array[] = [];
-  private recordedChunks: Blob[] = [];
   private isRecording = false;
   private recordingStartTime = 0;
 
@@ -47,6 +44,7 @@ export class BossGameplayScene extends GameplayScene {
     super.create();
 
     this.requiredPhonemes = this.levelConfig.winCondition.requiredPhonemes || ['m', 's', 'a'];
+    this.mic = new MicrophoneInput();
     this.analyzer = new PhonemeAnalyzer();
 
     const { width } = this.scale;
@@ -86,7 +84,7 @@ export class BossGameplayScene extends GameplayScene {
     }
   }
 
-  // ─── New flow: click → record → stop → analyze ───
+  // ─── Click → start mic → collect frames → user stops → analyze ───
 
   private async onCrystalClick(phoneme: string) {
     if (this.isRecording) return;
@@ -99,46 +97,19 @@ export class BossGameplayScene extends GameplayScene {
     this.showStatus(`🎤 正在录音... 读完 /${phoneme}/ 后点击停止`, '#d4912a');
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      });
-
-      // AudioContext for AnalyserNode (spectral data)
-      this.audioCtx = new AudioContext();
-      await this.audioCtx.resume(); // required: browsers suspend AudioContext until user gesture
-      this.audioSampleRate = this.audioCtx.sampleRate;
-      this.analyserNode = this.audioCtx.createAnalyser();
-      this.analyserNode.fftSize = 2048;
-      this.analyserNode.smoothingTimeConstant = 0;
-      const source = this.audioCtx.createMediaStreamSource(stream);
-      source.connect(this.analyserNode);
-
-      // MediaRecorder for file saving
-      this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      this.recordedChunks = [];
-      this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedChunks.push(e.data); };
-
-      // Collect frequency frames (wait 200ms for audio to start flowing)
-      this.freqFrames = [];
-      const sampleRate = this.audioCtx.sampleRate;
-      const collectFrame = () => {
-        if (!this.isRecording || !this.analyserNode) return;
-        const data = new Uint8Array(this.analyserNode.frequencyBinCount);
-        this.analyserNode.getByteFrequencyData(data);
-        this.freqFrames.push(data);
-        if (this.isRecording) requestAnimationFrame(collectFrame);
-      };
-
-      this.mediaRecorder.start();
+      await this.mic!.start();
       this.isRecording = true;
       this.recordingStartTime = Date.now();
-      // Delay frame collection to avoid initial noise burst
-      setTimeout(() => { if (this.isRecording) collectFrame(); }, 200);
+      this.freqFrames = [];
 
-      // Show stop button + timer
+      // Use MicrophoneInput's proven data pipeline
+      this.mic!.startListening((freqData) => {
+        if (!this.isRecording) return;
+        this.freqFrames.push(new Uint8Array(freqData));
+      });
+
       this.showStopButton();
       this.startTimer();
-
     } catch {
       this.showStatus('麦克风启动失败！请允许浏览器使用麦克风权限', '#7a1a1a');
     }
@@ -147,24 +118,9 @@ export class BossGameplayScene extends GameplayScene {
   private stopRecording() {
     if (!this.isRecording) return;
     this.isRecording = false;
-
-    // Stop MediaRecorder
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
-
-    // Stop tracks
-    if (this.mediaRecorder) {
-      this.mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
-    if (this.audioCtx && this.audioCtx.state !== 'closed') {
-      this.audioCtx.close();
-    }
-
+    this.mic?.stop();
     this.hideStopButton();
     this.stopTimer();
-
-    // Wait for last dataavailable event
     this.time.delayedCall(200, () => this.processRecording());
   }
 
@@ -172,27 +128,13 @@ export class BossGameplayScene extends GameplayScene {
     const target = this.currentTarget;
     if (!target) return;
 
-    // Save WebM file
-    if (this.recordedChunks.length > 0) {
-      const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `phoneme-${target}-${Date.now()}.webm`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
     // Recognition phase
     this.showStatus('🔍 正在识别中...', '#f59e0b');
     this.showRecognizingAnimation();
-
-    // Small delay for animation to be visible
     await new Promise(r => setTimeout(r, 600));
 
-    // Analyze collected frequency frames
     const result = this.freqFrames.length >= 5 && this.analyzer
-      ? this.analyzer.analyzeFreqFrames(this.freqFrames, this.audioSampleRate, 2048)
+      ? this.analyzer.analyzeFreqFrames(this.freqFrames, 44100, 2048)
       : null;
 
     this.hideRecognizingAnimation();
@@ -213,12 +155,7 @@ export class BossGameplayScene extends GameplayScene {
       this.showStatus('❌ 不太确定，请再大声/清晰一点', '#f59e0b');
     }
 
-    // Cleanup
     this.freqFrames = [];
-    this.recordedChunks = [];
-    this.mediaRecorder = null;
-    this.audioCtx = null;
-    this.analyserNode = null;
   }
 
   // ─── Recording UI ───
@@ -300,7 +237,7 @@ export class BossGameplayScene extends GameplayScene {
     if (this.recognizingDots) { this.recognizingDots.destroy(); this.recognizingDots = null; }
   }
 
-  // ─── Success / existing logic ───
+  // ─── Success logic ───
 
   private onPhonemeMatched(phoneme: string) {
     if (!this.completedPhonemes.includes(phoneme)) {
