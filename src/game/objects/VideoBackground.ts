@@ -5,7 +5,7 @@ import * as Phaser from 'phaser';
 const VIDEO_URL = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260503_101827_abebfeec-f243-466b-b494-7f6814c0fbbf.mp4';
 
 export class VideoBackground extends Phaser.GameObjects.Image {
-  private video: HTMLVideoElement;
+  private video!: HTMLVideoElement;
 
   constructor(scene: Phaser.Scene) {
     // Create hidden video element

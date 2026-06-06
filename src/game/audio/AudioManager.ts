@@ -1,4 +1,4 @@
-// AudioManager — 优先标准真人发音 + DJ真人音标示范音频
+// AudioManager — 优先标准真人发音 + DJ真人音标示范音频 + WORLD协同发音合成
 
 import djMap from '@/data/dj-phoneme-map.json';
 
@@ -13,6 +13,13 @@ const standardMap: Record<string, string> = {
   a: '/assets/audio/standard/ae.mp3',   // æ 短元音
   ae: '/assets/audio/standard/ae.mp3',  // æ alias
   ah: '/assets/audio/standard/aa_long.mp3', // ɑː 长元音
+};
+
+// WORLD 声码器协同发音合成 → 预计算 blend WAV（优于运行时交叉淡入淡出）
+const BLEND_FILES: Record<string, string> = {
+  ma: '/assets/audio/blended/ma.wav',
+  sa: '/assets/audio/blended/sa.wav',
+  kat: '/assets/audio/blended/kat.wav',
 };
 
 // 游戏音素 → DJ分段文件路径（回退）
@@ -76,6 +83,16 @@ export class AudioManager {
         this.buffers.set(`dj_${seg}`, audioBuf);
       } catch { /* skip */ }
     }));
+    // 3. 预加载 WORLD 声码器协同发音合成 blend WAV
+    await Promise.all(Object.entries(BLEND_FILES).map(async ([key, url]) => {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const buf = await resp.arrayBuffer();
+        const audioBuf = await ctx.decodeAudioData(buf);
+        this.buffers.set(`blend_${key}`, audioBuf);
+      } catch { /* skip — 运行时回退到交叉淡入淡出 */ }
+    }));
     this.loaded = true;
   }
 
@@ -135,8 +152,19 @@ export class AudioManager {
     return data.subarray(startSample, endSample + 1);
   }
 
-  /** 合成音素：将多个音素音频缓冲区交叉淡入淡出拼接 */
+  /** 合成音素：优先 WORLD 协同发音预计算 blend，回退到运行时交叉淡入淡出 */
   blendPhonemes(phonemes: string[]): AudioBuffer | null {
+    // 优先：WORLD 声码器协同发音预计算 blend
+    const blendKey = phonemes.join('');
+    const preBlend = this.buffers.get(`blend_${blendKey}`);
+    if (preBlend) return preBlend;
+
+    // 回退：运行时波形交叉淡入淡出
+    return this.blendPhonemesRuntime(phonemes);
+  }
+
+  /** 运行时波形交叉淡入淡出（降级方案） */
+  private blendPhonemesRuntime(phonemes: string[]): AudioBuffer | null {
     const ctx = this.ensureCtx();
     const rawBufs: { data: Float32Array; sampleRate: number }[] = [];
 
@@ -232,20 +260,23 @@ export class AudioManager {
     return outBuffer;
   }
 
-  /** 播放合成音 — 优先交叉淡入淡出合成，回退到逐个播放 */
+  /** 播放合成音 — 优先 WORLD 预计算 blend → blendPhonemes() → 逐个播放 */
   playBlend(blendId: string) {
     const fallback: Record<string, string[]> = {
       ma: ['m', 'a'], sa: ['s', 'a'], kat: ['k', 'ae', 't'],
     };
+
+    // 优先 WORLD 预计算 blend
+    const preBlend = this.buffers.get(`blend_${blendId}`);
+    if (preBlend) { this.playBuffer(preBlend); return; }
+
+    // 回退到运行时合成
     const phonemes = fallback[blendId];
     if (!phonemes) return;
-
-    // Try real audio blending first
-    const blended = this.blendPhonemes(phonemes);
+    const blended = this.blendPhonemesRuntime(phonemes);
     if (blended) {
       this.playBuffer(blended);
     } else {
-      // Fallback: sequential playback
       phonemes.forEach((p, i) => { setTimeout(() => this.playPhoneme(p), i * 200); });
     }
   }
