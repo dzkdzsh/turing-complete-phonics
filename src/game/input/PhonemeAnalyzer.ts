@@ -288,12 +288,41 @@ export class PhonemeAnalyzer {
     return { phoneme: bestPhoneme, confidence: bestScore };
   }
 
-  /** 异步版：从原始 PCM 分析，不阻塞 UI */
+  /** Worker 版：完全在后台线程计算，零 UI 阻塞 */
   async analyzeAsync(rawData: Float32Array, sampleRate: number): Promise<PhonemeMatch | null> {
-    const audio16k = sampleRate !== TARGET_SR
-      ? resample(rawData, sampleRate, TARGET_SR)
-      : rawData;
-    return this.analyzeBufferAsync(audio16k);
+    return new Promise((resolve) => {
+      try {
+        const worker = new Worker('/phoneme-worker.js');
+        worker.onmessage = (e) => {
+          worker.terminate();
+          const { error, bestPhoneme, bestScore, features, scores } = e.data;
+          if (error || bestScore < 0.15) {
+            resolve(null);
+            return;
+          }
+          if (features) {
+            console.log('[PhonemeAnalyzer:Worker] centroid=' + features.centroid.toFixed(0) +
+              'Hz low400=' + (features.low400Ratio * 100).toFixed(0) + '%' +
+              ' low600=' + (features.low600Ratio * 100).toFixed(0) + '%' +
+              ' high=' + (features.highRatio * 100).toFixed(0) + '%' +
+              ' zcr=' + features.zcr.toFixed(3) +
+              ' frames=' + features.totalFrames + '/' + features.totalPossibleFrames);
+          }
+          if (scores) {
+            console.log('[PhonemeAnalyzer:Worker] scores: m=' + (scores.m * 100).toFixed(0) +
+              '% s=' + (scores.s * 100).toFixed(0) + '% a=' + (scores.a * 100).toFixed(0) +
+              '% best=/' + bestPhoneme + '/');
+          }
+          resolve({ phoneme: bestPhoneme, confidence: bestScore });
+        };
+        worker.onerror = () => { worker.terminate(); resolve(null); };
+        // Transfer the audio buffer to avoid copying
+        worker.postMessage({ audio: rawData, sampleRate }, [rawData.buffer]);
+      } catch {
+        // Fallback: sync analysis if Worker fails
+        resolve(this.analyze(rawData, sampleRate));
+      }
+    });
   }
 
   /**
