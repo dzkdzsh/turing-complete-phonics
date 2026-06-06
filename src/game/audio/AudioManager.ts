@@ -160,13 +160,9 @@ export class AudioManager {
       return out;
     }
 
-    // Calculate total duration with crossfades (using trimmed lengths)
-    const crossfadeSec = 0.015; // 15ms crossfade
+    // Resample all to output sample rate
     const outSampleRate = ctx.sampleRate;
-
-    // Resample all to output sample rate, calculate lengths
     const resampled: Float32Array[] = [];
-    let totalLen = 0;
     for (const raw of rawBufs) {
       let data: Float32Array;
       if (raw.sampleRate !== outSampleRate) {
@@ -183,13 +179,27 @@ export class AudioManager {
         data = raw.data;
       }
       resampled.push(data);
-      totalLen += data.length;
-      if (resampled.length > 1) totalLen -= Math.ceil(crossfadeSec * outSampleRate);
+    }
+
+    if (resampled.length === 1) {
+      const out = ctx.createBuffer(1, resampled[0].length, outSampleRate);
+      out.getChannelData(0).set(resampled[0]);
+      return out;
+    }
+
+    // Tight blend: overlap each pair by 60ms with crossfade
+    const overlapSec = 0.06; // 60ms overlap
+    const overlapSamples = Math.ceil(overlapSec * outSampleRate);
+
+    // Calculate output length
+    let totalLen = 0;
+    for (let i = 0; i < resampled.length; i++) {
+      totalLen += resampled[i].length;
+      if (i > 0) totalLen -= overlapSamples;
     }
 
     const outBuffer = ctx.createBuffer(1, totalLen, outSampleRate);
     const outData = outBuffer.getChannelData(0);
-    const fadeLen = Math.ceil(crossfadeSec * outSampleRate);
 
     let writePos = 0;
     for (let i = 0; i < resampled.length; i++) {
@@ -200,21 +210,15 @@ export class AudioManager {
         const targetIdx = writePos + s;
         if (targetIdx >= totalLen) break;
 
-        // Crossfade region: blend previous and current
-        if (i > 0 && s < fadeLen) {
-          const fadeIn = s / fadeLen;
+        if (i > 0 && s < overlapSamples) {
+          // Overlap region: crossfade with previous segment
+          const fadeIn = s / overlapSamples;
           outData[targetIdx] = outData[targetIdx] * (1 - fadeIn) + srcData[s] * fadeIn;
-          continue;
+        } else {
+          outData[targetIdx] += srcData[s];
         }
-
-        // Fade out at end (except last segment)
-        let gain = 1.0;
-        if (i < resampled.length - 1 && s >= srcLen - fadeLen) {
-          gain = 1.0 - (s - (srcLen - fadeLen)) / fadeLen;
-        }
-        outData[targetIdx] += srcData[s] * gain;
       }
-      writePos += srcLen - (i < resampled.length - 1 ? fadeLen : 0);
+      writePos += srcLen - (i > 0 ? overlapSamples : 0);
     }
 
     return outBuffer;
