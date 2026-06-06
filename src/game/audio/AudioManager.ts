@@ -11,6 +11,7 @@ const standardMap: Record<string, string> = {
   m: '/assets/audio/standard/m.mp3',
   t: '/assets/audio/standard/t.mp3',
   a: '/assets/audio/standard/ae.mp3',   // æ 短元音
+  ae: '/assets/audio/standard/ae.mp3',  // æ alias
   ah: '/assets/audio/standard/aa_long.mp3', // ɑː 长元音
 };
 
@@ -252,7 +253,7 @@ export class AudioManager {
     }
   }
 
-  private playBuffer(buf: AudioBuffer) {
+  playBuffer(buf: AudioBuffer) {
     const ctx = this.ensureCtx();
     const src = ctx.createBufferSource();
     src.buffer = buf;

@@ -159,24 +159,20 @@ export class BlenderNode extends Phaser.GameObjects.Container {
       });
       this.bgRect.setStrokeStyle(2, 0x10b981, 0.8);
 
-      // 播放合成音
-      const phonemes = inputPorts.map((p) => p.connectedPhoneme!).join('');
-      const blendId = phonemes;
-
-      // 如果存在对应的合成音频（如 ma、sa、kat），播放它
-      const knownBlends = ['ma', 'sa', 'kat'];
-      if (knownBlends.includes(blendId)) {
-        AudioManager.getInstance().playBlend(blendId);
+      // 合成音：用交叉淡入淡出拼接所有音素
+      const phonemes = inputPorts.map((p) => p.connectedPhoneme!);
+      const blendId = phonemes.join('');
+      const audio = AudioManager.getInstance();
+      const blended = audio.blendPhonemes(phonemes);
+      if (blended) {
+        audio.playBuffer(blended);
       } else {
-        // 否则顺序播放每个音素
-        for (let i = 0; i < inputPorts.length; i++) {
-          setTimeout(() => {
-            AudioManager.getInstance().playPhoneme(inputPorts[i].connectedPhoneme!);
-          }, i * 300);
-        }
+        // 回退：顺序播放
+        phonemes.forEach((p, i) => {
+          setTimeout(() => audio.playPhoneme(p), i * 150);
+        });
       }
 
-      // 显示合成结果
       this.outputLabel.setText(blendId);
       this.outputLabel.setColor('#10b981');
     }
