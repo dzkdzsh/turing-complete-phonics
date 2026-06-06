@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // DragLetter — 可拖拽字母块：从候选区拖到拼写槽位
 
 import * as Phaser from 'phaser';
@@ -22,13 +23,13 @@ export class DragLetter extends Phaser.GameObjects.Container {
     this.add(sh);
 
     // Background
-    this.bg = scene.add.rectangle(0, 0, size, size, 0xffffff, 0.95);
-    this.bg.setStrokeStyle(2.5, 0xd4912a, 0.4);
+    this.bg = scene.add.rectangle(0, 0, size, size, randomDarkFill(), 0.95);
+    this.bg.setStrokeStyle(2.5, 0x444444, 0.4);
     this.add(this.bg);
 
     // Letter
     this.text = scene.add.text(0, 0, letter.toUpperCase(), {
-      fontSize: '32px', color: '#2c2416', fontFamily: 'Crimson Text, serif', fontStyle: 'bold',
+      fontSize: '32px', color: '#000000', fontFamily: 'Crimson Text, serif', fontStyle: 'bold',
     }).setOrigin(0.5);
     this.add(this.text);
 
@@ -39,7 +40,7 @@ export class DragLetter extends Phaser.GameObjects.Container {
     this.on('dragstart', () => {
       this.setDepth(10);
       this.setScale(1.1);
-      this.bg.setStrokeStyle(2.5, 0xd4912a, 0.8);
+      this.bg.setStrokeStyle(2.5, 0x444444, 0.8);
     });
 
     this.on('drag', (_p: Phaser.Input.Pointer, dragX: number, dragY: number) => {
@@ -50,7 +51,7 @@ export class DragLetter extends Phaser.GameObjects.Container {
     this.on('dragend', () => {
       this.setDepth(0);
       this.setScale(1);
-      this.bg.setStrokeStyle(2.5, 0xd4912a, 0.4);
+      this.bg.setStrokeStyle(2.5, 0x444444, 0.4);
     });
   }
 

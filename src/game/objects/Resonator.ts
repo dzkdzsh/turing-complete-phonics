@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // Resonator —— Era 1 共振器 / Boss 关水晶
 
 import * as Phaser from 'phaser';
@@ -40,18 +41,18 @@ export class Resonator extends Phaser.GameObjects.Container {
   /** Boss 关：圆形发光水晶 */
   private buildCrystal(scene: Phaser.Scene, def: GameObjectDef) {
     // 外层光晕
-    this.crystalGlow = scene.add.ellipse(0, 0, 70, 70, 0x444466, 0.25);
+    this.crystalGlow = scene.add.ellipse(0, 0, 70, 70, 0x1a1a1a, 0.25);
     this.add(this.crystalGlow);
 
     // 水晶核心
-    this.core = scene.add.ellipse(0, 0, 44, 44, 0x334466, 0.7);
-    this.core.setStrokeStyle(2, 0x6677aa, 0.6);
+    this.core = scene.add.ellipse(0, 0, 44, 44, 0x1a1a1a, 0.7);
+    this.core.setStrokeStyle(2, 0x444444, 0.6);
     this.add(this.core);
 
     // 音素标识
     const phonemeText = scene.add.text(0, -4, this.phoneme ? `/${this.phoneme}/` : '?', {
       fontSize: '18px',
-      color: '#8899cc',
+      color: '#444444',
       fontFamily: 'monospace',
       fontStyle: 'bold',
     });
@@ -61,7 +62,7 @@ export class Resonator extends Phaser.GameObjects.Container {
     // 标签
     this.lab = scene.add.text(0, 35, def.label || '水晶', {
       fontSize: '11px',
-      color: '#8899cc',
+      color: '#444444',
       fontFamily: 'sans-serif',
       align: 'center',
     });
@@ -85,24 +86,24 @@ export class Resonator extends Phaser.GameObjects.Container {
   /** Era 1：矩形共振器 */
   private buildResonator(scene: Phaser.Scene, def: GameObjectDef) {
     // Glow behind
-    const glow = scene.add.ellipse(0, 0, 110, 90, 0xc9a96e, 0.08);
+    const glow = scene.add.ellipse(0, 0, 110, 90, 0x444444, 0.08);
     this.add(glow);
     scene.tweens.add({ targets: glow, alpha: 0.15, duration: 2000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    this.resonatorBody = scene.add.rectangle(0, 0, 100, 80, 0xffffff, 0.9);
-    this.resonatorBody.setStrokeStyle(2, 0x6366f1, 0.4);
+    this.resonatorBody = scene.add.rectangle(0, 0, 100, 80, randomDarkFill(), 0.9);
+    this.resonatorBody.setStrokeStyle(2, 0x444444, 0.4);
     this.add(this.resonatorBody);
 
-    this.core = scene.add.ellipse(0, 0, 30, 30, 0x6366f1, 0.1);
-    this.core.setStrokeStyle(1, 0x6366f1, 0.4);
+    this.core = scene.add.ellipse(0, 0, 30, 30, 0x444444, 0.1);
+    this.core.setStrokeStyle(1, 0x444444, 0.4);
     this.add(this.core);
 
-    this.portIndicator = scene.add.ellipse(-50, 0, 10, 10, 0x6366f1, 0.5);
+    this.portIndicator = scene.add.ellipse(-50, 0, 10, 10, 0x444444, 0.5);
     scene.tweens.add({ targets: this.portIndicator, alpha: 0.3, duration: 1000, yoyo: true, repeat: -1 });
     this.add(this.portIndicator);
 
     this.lab = scene.add.text(0, 55, def.label || '共振器', {
-      fontSize: '11px', color: '#6b5e53', fontFamily: 'sans-serif',
+      fontSize: '11px', color: '#000000', fontFamily: 'sans-serif',
     });
     this.lab.setOrigin(0.5, 0);
     this.add(this.lab);
@@ -118,7 +119,7 @@ export class Resonator extends Phaser.GameObjects.Container {
 
     this.scene.tweens.add({
       targets: this.core,
-      fillColor: this.isCrystal ? 0x10b981 : 0xc9a96e,
+      fillColor: this.isCrystal ? 0x10b981 : 0x444444,
       fillAlpha: 0.9,
       scaleX: 1.5,
       scaleY: 1.5,

@@ -18,6 +18,8 @@ import { AlphabetTile } from '../objects/AlphabetTile';
 import { Companion } from '../objects/Companion';
 import { SpellingSlot } from '../objects/SpellingSlot';
 import { DragLetter } from '../objects/DragLetter';
+import { VideoBackground } from '../objects/VideoBackground';
+import { randomDarkFill } from '../objects/DarkFills';
 import { PhonemeLibrary } from '../audio/PhonemeLibrary';
 import { AudioManager } from '../audio/AudioManager';
 import type { GameObj } from '../objects/GameObjectFactory';
@@ -55,9 +57,10 @@ export class GameplayScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor('#f5f3f0');
+    this.cameras.main.setBackgroundColor('#000000');
 
-    // ---- 背景：羊皮纸纹理 + 声波纹 ----
+    // ---- 背景：视频 + 羊皮纸纹理 + 声波纹 ----
+    new VideoBackground(this);
     this._drawBackground(width, height);
 
     this.mouthShapeButtons = [];
@@ -79,19 +82,19 @@ export class GameplayScene extends Phaser.Scene {
 
     // Title — clean, minimal
     this.add.text(width / 2, 20, this.levelConfig.title, {
-      fontSize: '18px', color: '#1e1b18', fontFamily: 'sans-serif', fontStyle: 'bold',
+      fontSize: '18px', color: '#000000', fontFamily: 'sans-serif', fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // ---- 剧情式步骤指引 ----
     this._stepIndex = 0;
     this._guidanceCard = this.add.container(width - 20, 55);
     this._guidanceBg = this.add.graphics();
-    this._guidanceText = this.add.text(0, 0, '', { fontSize: '11px', color: '#2c2416', fontFamily: 'sans-serif', wordWrap: { width: 170 } });
+    this._guidanceText = this.add.text(0, 0, '', { fontSize: '11px', color: '#000000', fontFamily: 'sans-serif', wordWrap: { width: 170 } });
     this._guidanceCard.add([this._guidanceBg, this._guidanceText]);
 
     // Hint bar (must exist before _updateGuidance)
     this._hintText = this.add.text(width / 2, height - 20, '', {
-      fontSize: '12px', color: '#444444', fontFamily: 'sans-serif',
+      fontSize: '12px', color: '#000000', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
     this._updateGuidance('start');
@@ -199,9 +202,9 @@ export class GameplayScene extends Phaser.Scene {
 
     // Build guidance card (top-right)
     this._guidanceBg.clear();
-    this._guidanceBg.fillStyle(0xfdf8f0, 0.9);
+    this._guidanceBg.fillStyle(randomDarkFill(), 0.9);
     this._guidanceBg.fillRoundedRect(-180, 0, 180, 76, 10);
-    this._guidanceBg.lineStyle(1, 0xd4912a, 0.2);
+    this._guidanceBg.lineStyle(1, 0x444444, 0.4);
     this._guidanceBg.strokeRoundedRect(-180, 0, 180, 76, 10);
     let body = `📋 ${current + 1}/${total}\n`;
     for (let i = 0; i < total; i++) {
@@ -231,7 +234,7 @@ export class GameplayScene extends Phaser.Scene {
     const qi = qs[this._spellWordIndex];
     if (!qi) { eventBus.emit(GameEvents.WIN_CONDITION_MET, { stars: Math.max(1, 4 - this._spellAttempts), timeSec: 0 }); return; }
     // Question text
-    const qt = this.add.text(w/2, h/3-40, qi.q, { fontSize:'22px', color:'#1a1a1a', fontFamily:'sans-serif',fontStyle:'bold' }).setOrigin(0.5).setDepth(10);
+    const qt = this.add.text(w/2, h/3-40, qi.q, { fontSize:'22px', color:'#000000', fontFamily:'sans-serif',fontStyle:'bold' }).setOrigin(0.5).setDepth(10);
     // Option buttons
     const opts = Phaser.Utils.Array.Shuffle([...qi.opts]);
     const btnW = 180, btnH = 50, gap = 14, cols = 2;
@@ -241,17 +244,17 @@ export class GameplayScene extends Phaser.Scene {
       const col = i % cols, row = Math.floor(i / cols);
       const bx = startX + col * (btnW + gap), by = startY + row * (btnH + gap);
       const g = this.add.graphics();
-      g.fillStyle(0xffffff, 0.08); g.fillRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
-      g.lineStyle(2, 0xd4912a, 0.3); g.strokeRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
-      const tx = this.add.text(bx, by, opt, { fontSize:'16px', color:'#1a1a1a', fontFamily:'sans-serif' }).setOrigin(0.5);
+      g.fillStyle(0x222222, 0.5); g.fillRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+      g.lineStyle(2, 0x444444, 0.6); g.strokeRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
+      const tx = this.add.text(bx, by, opt, { fontSize:'16px', color:'#000000', fontFamily:'sans-serif' }).setOrigin(0.5);
       const zone = this.add.zone(bx, by, btnW, btnH).setInteractive({useHandCursor:true}).setDepth(10);
       const container = this.add.container(0, 0); container.add([g, tx]);
       zone.on('pointerdown', () => {
         const isCorrect = opt === qi.ans;
         g.clear();
-        g.fillStyle(isCorrect ? 0x10b981 : 0xef4444, 0.3);
+        g.fillStyle(isCorrect ? 0x0a5c3f : 0x7a1a1a, 0.6);
         g.fillRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
-        g.lineStyle(2, isCorrect ? 0x10b981 : 0xef4444, 0.6);
+        g.lineStyle(2, isCorrect ? 0x0a5c3f : 0x7a1a1a, 0.8);
         g.strokeRoundedRect(bx-btnW/2, by-btnH/2, btnW, btnH, 14);
         btns.forEach(b => b.list.forEach(c => { if (c.type==='Zone') c.disableInteractive(); }));
         if (isCorrect) {
@@ -267,7 +270,7 @@ export class GameplayScene extends Phaser.Scene {
       container.setDepth(10);
       btns.push(container);
     });
-    this.add.text(w/2, h-30, `${this._spellWordIndex+1}/${qs.length}`, { fontSize:'13px', color:'#555555',fontFamily:'monospace' }).setOrigin(0.5).setDepth(10);
+    this.add.text(w/2, h-30, `${this._spellWordIndex+1}/${qs.length}`, { fontSize:'13px', color:'#000000',fontFamily:'monospace' }).setOrigin(0.5).setDepth(10);
   }
 
   private _setupSpellingMode() {
@@ -319,17 +322,17 @@ export class GameplayScene extends Phaser.Scene {
     });
     const spY = slotY - 100;
     const spG = this.add.graphics().setDepth(5);
-    spG.fillStyle(0xffffff, 0.9); spG.fillCircle(w / 2, spY, 38); spG.lineStyle(3, 0xd4912a, 0.4); spG.strokeCircle(w / 2, spY, 38);
+    spG.fillStyle(0x1a1a1a, 0.9); spG.fillCircle(w / 2, spY, 38); spG.lineStyle(3, 0x444444, 0.6); spG.strokeCircle(w / 2, spY, 38);
     const spT = this.add.text(w / 2, spY, '🔊', { fontSize: '36px' }).setOrigin(0.5).setDepth(6);
     this.add.zone(w / 2, spY, 80, 80).setInteractive({ useHandCursor: true }).setDepth(7).on('pointerdown', () => { this._speakWord(word); this.tweens.add({ targets: spT, scaleX: 1.3, scaleY: 1.3, duration: 120, yoyo: true, ease: 'Bounce.easeOut' }); });
-    this.add.text(w / 2, spY - 50, `${this._spellWordIndex + 1}/${this._spellWords.length}`, { fontSize: '13px', color: '#555555', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(5);
+    this.add.text(w / 2, spY - 50, `${this._spellWordIndex + 1}/${this._spellWords.length}`, { fontSize: '13px', color: '#000000', fontFamily: 'monospace' }).setOrigin(0.5).setDepth(5);
     this.time.delayedCall(500, () => this._speakWord(word));
     if (this.levelConfig.mechanicType === 'memory_spell') {
       const vocab = ((this.levelConfig as any).vocab || []).find((v:any)=>v.w===word);
-      const ft = this.add.text(w / 2, spY - 20, word.toUpperCase(), { fontSize: '56px', color: '#f97316', fontFamily: 'Crimson Text, serif', fontStyle: 'bold', stroke: '#fff', strokeThickness: 4 }).setOrigin(0.5).setDepth(20).setAlpha(0);
+      const ft = this.add.text(w / 2, spY - 20, word.toUpperCase(), { fontSize: '56px', color: '#000000', fontFamily: 'Crimson Text, serif', fontStyle: 'bold', stroke: '#333', strokeThickness: 2 }).setOrigin(0.5).setDepth(20).setAlpha(0);
       if (vocab) {
-        const fp = this.add.text(w / 2, spY + 30, vocab.p||'', { fontSize: '18px', color: '#555555', fontFamily: 'sans-serif' }).setOrigin(0.5).setDepth(20).setAlpha(0);
-        const fc = this.add.text(w / 2, spY + 55, vocab.c||'', { fontSize: '20px', color: '#d4912a', fontFamily: 'sans-serif', fontStyle: 'bold' }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        const fp = this.add.text(w / 2, spY + 30, vocab.p||'', { fontSize: '18px', color: '#000000', fontFamily: 'sans-serif' }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        const fc = this.add.text(w / 2, spY + 55, vocab.c||'', { fontSize: '20px', color: '#000000', fontFamily: 'sans-serif', fontStyle: 'bold' }).setOrigin(0.5).setDepth(20).setAlpha(0);
         this.tweens.add({ targets: [ft,fp,fc], alpha: 1, duration: 300 });
         this.time.delayedCall(3500, () => { this.tweens.add({ targets: [ft,fp,fc], alpha: 0, duration: 400, onComplete: () => { ft.destroy(); fp.destroy(); fc.destroy(); } }); });
       } else {
@@ -352,33 +355,20 @@ export class GameplayScene extends Phaser.Scene {
 
   /** 羊皮纸纹理 + 声波纹 + 浮游音素 */
   private _drawBackground(w: number, h: number) {
-    const g = this.add.graphics().setDepth(-10).setAlpha(0.6);
-
-    // --- 羊皮纸底色渐变 ---
-    const topR = 254, topG = 249, topB = 240;
-    const botR = 250, botG = 243, botB = 230;
-    for (let i = 0; i < 24; i++) {
-      const t = i / 23;
-      g.fillStyle(Phaser.Display.Color.GetColor(
-        Math.round(topR + (botR - topR) * t),
-        Math.round(topG + (botG - topG) * t),
-        Math.round(topB + (botB - topB) * t)));
-      g.fillRect(0, i * h / 24, w, h / 24 + 2);
-    }
+    // Canvas is transparent — video background shows through.
+    // Only draw subtle decorative elements on top.
+    const g = this.add.graphics().setDepth(-10);
 
     // --- 淡墨横格线 (笔记本) ---
-    g.lineStyle(1, 0x8b7355, 0.04);
+    g.lineStyle(1, 0x1a1a1a, 0.03);
     for (let y = 60; y < h - 40; y += 28) {
       g.lineBetween(30, y, w - 30, y);
     }
-    // 左竖线
-    g.lineStyle(1, 0xef4444, 0.06);
-    g.lineBetween(42, 50, 42, h - 50);
 
     // --- 声波纹弧线 ---
     const cx = w / 2, cy = h / 2 + 30;
     for (let ring = 1; ring <= 4; ring++) {
-      g.lineStyle(1, 0x6366f1, 0.04 - ring * 0.01);
+      g.lineStyle(1, 0x1a1a1a, 0.02);
       g.beginPath();
       for (let angle = 0; angle <= Math.PI * 2; angle += 0.1) {
         const rx = 120 + ring * 50 + Math.sin(angle * 3) * 8;
@@ -392,15 +382,15 @@ export class GameplayScene extends Phaser.Scene {
 
     // --- 角落装饰：音素符号 ---
     const symbols = ['/m/', '/s/', '/a/', '/k/', '/t/', '♪', '♫', '~'];
-    symbols.forEach((sym, i) => {
+    symbols.forEach((sym) => {
       const sx = 40 + Math.random() * (w - 80);
       const sy = 70 + Math.random() * (h - 110);
       const t = this.add.text(sx, sy, sym, {
         fontSize: `${Math.floor(Math.random() * 10 + 10)}px`,
-        color: '#d4cfc9', fontFamily: 'serif',
-      }).setAlpha(0.12).setDepth(-5);
+        color: '#333333', fontFamily: 'serif',
+      }).setAlpha(0.06).setDepth(-5);
       this.tweens.add({
-        targets: t, y: sy - 15, alpha: 0.04,
+        targets: t, y: sy - 15, alpha: 0.02,
         duration: Phaser.Math.Between(4000, 8000), repeat: -1, yoyo: true,
         delay: Phaser.Math.Between(0, 3000),
       });

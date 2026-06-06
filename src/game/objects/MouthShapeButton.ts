@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // MouthShapeButton —— Era 1 sound_lab：点击口型发出对应声音
 
 import * as Phaser from 'phaser';
@@ -24,8 +25,8 @@ export class MouthShapeButton extends Phaser.GameObjects.Container {
     this.audio = AudioManager.getInstance();
 
     // 圆形按钮背景
-    this.bg = scene.add.ellipse(0, 0, 90, 90, 0x2a2520, 0.9);
-    this.bg.setStrokeStyle(2, 0xc9a96e, 0.5);
+    this.bg = scene.add.ellipse(0, 0, 90, 90, randomDarkFill(), 0.9);
+    this.bg.setStrokeStyle(2, 0x444444, 0.5);
     this.add(this.bg);
 
     // 口型图标（用文字模拟）
@@ -41,7 +42,7 @@ export class MouthShapeButton extends Phaser.GameObjects.Container {
     this.label = scene.add
       .text(0, 32, def.label || `/${this.phoneme}/`, {
         fontSize: '12px',
-        color: '#e8e0d0',
+        color: '#444444',
         fontFamily: 'sans-serif',
       })
       .setOrigin(0.5);
@@ -51,7 +52,7 @@ export class MouthShapeButton extends Phaser.GameObjects.Container {
     const phonemeLabel = scene.add
       .text(0, -42, `/${this.phoneme}/`, {
         fontSize: '11px',
-        color: '#c9a96e',
+        color: '#444444',
         fontFamily: 'sans-serif',
       })
       .setOrigin(0.5);
@@ -98,7 +99,7 @@ export class MouthShapeButton extends Phaser.GameObjects.Container {
     });
 
     // 波纹效果
-    const ripple = this.scene.add.ellipse(this.x, this.y, 90, 90, 0xc9a96e, 0.3);
+    const ripple = this.scene.add.ellipse(this.x, this.y, 90, 90, 0x444444, 0.3);
     this.scene.tweens.add({
       targets: ripple,
       scaleX: 2,
@@ -111,7 +112,7 @@ export class MouthShapeButton extends Phaser.GameObjects.Container {
     // 高亮边框
     this.bg.setStrokeStyle(3, 0x10b981, 0.8);
     this.scene.time.delayedCall(600, () => {
-      this.bg.setStrokeStyle(2, 0xc9a96e, 0.5);
+      this.bg.setStrokeStyle(2, 0x444444, 0.5);
     });
   }
 }

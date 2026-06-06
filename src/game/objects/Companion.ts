@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // Companion — 精灵伙伴：表情 + 对话气泡 + 生动动画
 
 import * as Phaser from 'phaser';
@@ -35,12 +36,12 @@ export class Companion extends Phaser.GameObjects.Container {
     this.add(this.ears);
 
     // Body
-    this.spriteBody = scene.add.ellipse(0, 0, 48 * sz, 46 * sz, 0xffffff, 0.92);
-    this.spriteBody.setStrokeStyle(2.5, era === 1 ? 0xf59e0b : era === 2 ? 0x06b6d4 : 0x8b5cf6, 0.45);
+    this.spriteBody = scene.add.ellipse(0, 0, 48 * sz, 46 * sz, randomDarkFill(), 0.92);
+    this.spriteBody.setStrokeStyle(2.5, era === 1 ? 0x555555 : era === 2 ? 0x555555 : 0x555555, 0.45);
     this.add(this.spriteBody);
 
     // Belly
-    const belly = scene.add.ellipse(0, 6 * sz, 28 * sz, 24 * sz, 0xfef7ed, 0.6);
+    const belly = scene.add.ellipse(0, 6 * sz, 28 * sz, 24 * sz, randomDarkFill(), 0.6);
     this.add(belly);
 
     // Wings (small decorative)
@@ -98,18 +99,18 @@ export class Companion extends Phaser.GameObjects.Container {
     this.bubbleBg = scene.add.graphics();
     const bw = Math.max(120, text.length * 11 + 30);
     const bh = 36;
-    this.bubbleBg.fillStyle(0xffffff, 0.94);
+    this.bubbleBg.fillStyle(0x1a1a1a, 0.94);
     this.bubbleBg.fillRoundedRect(this.x - bw / 2 + 30, this.y - 70, bw, bh, 12);
-    this.bubbleBg.lineStyle(1, 0xd4912a, 0.2);
+    this.bubbleBg.lineStyle(1, 0x444444, 0.2);
     this.bubbleBg.strokeRoundedRect(this.x - bw / 2 + 30, this.y - 70, bw, bh, 12);
     // Tail
-    this.bubbleBg.fillStyle(0xffffff, 0.94);
+    this.bubbleBg.fillStyle(0x1a1a1a, 0.94);
     this.bubbleBg.fillTriangle(this.x + 16, this.y - 36, this.x + 24, this.y - 36, this.x + 20, this.y - 28);
     this.bubbleBg.setDepth(20);
 
     // Bubble text
     this.bubbleText = scene.add.text(this.x + 30, this.y - 64, text, {
-      fontSize: '12px', color: '#2c2416', fontFamily: 'sans-serif', fontStyle: 'bold',
+      fontSize: '12px', color: '#000000', fontFamily: 'sans-serif', fontStyle: 'bold',
     }).setOrigin(0, 0.5).setDepth(21);
 
     // Auto-dismiss
@@ -129,14 +130,14 @@ export class Companion extends Phaser.GameObjects.Container {
 
   private _drawEars() {
     this.ears.clear();
-    this.ears.fillStyle(0xf59e0b, 0.3);
+    this.ears.fillStyle(0x555555, 0.3);
     this.ears.fillTriangle(-10, -16, -18, -28, -2, -18);
     this.ears.fillTriangle(10, -16, 18, -28, 2, -18);
   }
 
   private _drawWings() {
     this.wings.clear();
-    this.wings.fillStyle(0xf59e0b, 0.12);
+    this.wings.fillStyle(0x555555, 0.12);
     this.wings.fillEllipse(-22, 4, 14, 10);
     this.wings.fillEllipse(22, 4, 14, 10);
   }
@@ -151,7 +152,7 @@ export class Companion extends Phaser.GameObjects.Container {
       case 'idle':
         this.eyes.fillStyle(0x1e1b18);
         this.eyes.fillCircle(-8, -4, 3.2); this.eyes.fillCircle(8, -4, 3.2);
-        this.eyes.fillStyle(0xffffff);
+        this.eyes.fillStyle(0x1a1a1a);
         this.eyes.fillCircle(-7, -5.5, 1.2); this.eyes.fillCircle(9, -5.5, 1.2);
         this.mouth.lineStyle(2, 0x1e1b18, 0.5);
         this.mouth.beginPath(); this.mouth.arc(0, 4, 5, 0.1, Math.PI - 0.1, false); this.mouth.strokePath();
@@ -161,7 +162,7 @@ export class Companion extends Phaser.GameObjects.Container {
       case 'happy':
         this.eyes.fillStyle(0x1e1b18);
         this.eyes.fillEllipse(-7, -5, 5, 7); this.eyes.fillEllipse(9, -5, 5, 7);
-        this.eyes.fillStyle(0xffffff);
+        this.eyes.fillStyle(0x1a1a1a);
         this.eyes.fillCircle(-6, -7, 1.5); this.eyes.fillCircle(10, -7, 1.5);
         this.mouth.fillStyle(0x1e1b18);
         this.mouth.fillEllipse(0, 5, 8, 5);
@@ -175,7 +176,7 @@ export class Companion extends Phaser.GameObjects.Container {
       case 'sad':
         this.eyes.fillStyle(0x1e1b18);
         this.eyes.fillCircle(-8, -1, 3.5); this.eyes.fillCircle(8, -1, 3.5);
-        this.eyes.fillStyle(0x06b6d4, 0.35);
+        this.eyes.fillStyle(0x555555, 0.35);
         this.eyes.fillCircle(2, 3, 1.8);
         this.mouth.lineStyle(2, 0x1e1b18, 0.5);
         this.mouth.beginPath(); this.mouth.arc(0, 14, 5, Math.PI, 0, false); this.mouth.strokePath();
@@ -187,7 +188,7 @@ export class Companion extends Phaser.GameObjects.Container {
       case 'thinking':
         this.eyes.fillStyle(0x1e1b18);
         this.eyes.fillCircle(-6, -5, 2.5); this.eyes.fillCircle(12, -5, 2.5);
-        this.eyes.fillStyle(0xffffff);
+        this.eyes.fillStyle(0x1a1a1a);
         this.eyes.fillCircle(-5, -6.5, 1); this.eyes.fillCircle(13, -6.5, 1);
         this.mouth.fillStyle(0x1e1b18, 0.45);
         this.mouth.fillCircle(4, 5, 2.8);
@@ -198,7 +199,7 @@ export class Companion extends Phaser.GameObjects.Container {
         this.eyes.fillStyle(0x1e1b18);
         this.eyes.fillCircle(-7, -5, 3); this.eyes.fillCircle(9, -5, 3);
         // Star sparkle dots
-        this.eyes.fillStyle(0xf59e0b);
+        this.eyes.fillStyle(0x555555);
         this.eyes.fillCircle(-7, -9, 2); this.eyes.fillCircle(-10, -5, 1.5);
         this.eyes.fillCircle(-4, -5, 1.5); this.eyes.fillCircle(-7, -1, 1.5);
         this.eyes.fillCircle(9, -9, 2); this.eyes.fillCircle(6, -5, 1.5);
@@ -218,7 +219,7 @@ export class Companion extends Phaser.GameObjects.Container {
 
   evolve(era: number) {
     this.era = era;
-    this.spriteBody.setStrokeStyle(2.5, era === 1 ? 0xf59e0b : era === 2 ? 0x06b6d4 : 0x8b5cf6, 0.45);
+    this.spriteBody.setStrokeStyle(2.5, era === 1 ? 0x555555 : era === 2 ? 0x555555 : 0x555555, 0.45);
     const sz = 0.6 + era * 0.1;
     this.spriteBody.setSize(48 * sz, 46 * sz);
     this.say(era === 2 ? '新世界解锁！' : '新的力量觉醒了...', 2000);

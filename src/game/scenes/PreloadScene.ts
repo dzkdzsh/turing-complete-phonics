@@ -30,7 +30,7 @@ export class PreloadScene extends Phaser.Scene {
   create() {
     this.waitText = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '加载关卡配置...', {
-        fontSize: '18px', color: '#8b7355', fontFamily: 'sans-serif',
+        fontSize: '18px', color: '#444444', fontFamily: 'sans-serif',
       })
       .setOrigin(0.5);
 

@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // SoundCreature —— Era 1 可拖拽的声音生物
 
 import * as Phaser from 'phaser';
@@ -23,7 +24,7 @@ export class SoundCreature extends Phaser.GameObjects.Container {
     this.phoneme = def.phoneme || '';
     this.isDraggable = def.draggable || false;
 
-    this.baseColor = PHONEME_COLORS[this.phoneme] || 0xc9a96e;
+    this.baseColor = PHONEME_COLORS[this.phoneme] || 0x444444;
 
     // 发光效果（底层）
     this.glowEffect = scene.add.ellipse(0, 0, 68, 68, this.baseColor, 0.12);
@@ -32,7 +33,7 @@ export class SoundCreature extends Phaser.GameObjects.Container {
 
     // 节点主体 — 浅色电路元件
     const bodyG = scene.add.graphics();
-    bodyG.fillStyle(0xffffff, 0.95);
+    bodyG.fillStyle(randomDarkFill(), 0.95);
     bodyG.fillRoundedRect(-28, -24, 56, 48, 10);
     bodyG.lineStyle(2, this.baseColor, 0.8);
     bodyG.strokeRoundedRect(-28, -24, 56, 48, 10);
@@ -43,13 +44,13 @@ export class SoundCreature extends Phaser.GameObjects.Container {
 
     // 顶部标签
     this.creatureLabel = scene.add.text(0, -32, def.label || '', {
-      fontSize: '10px', color: '#6b5e53', fontFamily: 'sans-serif',
+      fontSize: '10px', color: '#000000', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
     this.add(this.creatureLabel);
 
     // 音素标识 (底部居中)
     const phonemeText = scene.add.text(0, 30, `/${this.phoneme}/`, {
-      fontSize: '11px', color: '#c9a96e', fontFamily: 'monospace', fontStyle: 'bold',
+      fontSize: '11px', color: '#444444', fontFamily: 'monospace', fontStyle: 'bold',
     }).setOrigin(0.5);
     this.add(phonemeText);
 

@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // BlenderNode —— Era 2 声音合成器：多个输入端口，接收连线后合成声音
 
 import * as Phaser from 'phaser';
@@ -32,19 +33,19 @@ export class BlenderNode extends Phaser.GameObjects.Container {
     this.objectId = def.id;
 
     // 外层框
-    this.bgRect = scene.add.rectangle(0, 0, 120, 100, 0x2a2520, 0.8);
-    this.bgRect.setStrokeStyle(2, 0x06b6d4, 0.4);
+    this.bgRect = scene.add.rectangle(0, 0, 120, 100, randomDarkFill(), 0.8);
+    this.bgRect.setStrokeStyle(2, 0x555555, 0.4);
     this.add(this.bgRect);
 
     // 核心
-    this.core = scene.add.ellipse(0, 0, 40, 40, 0x06b6d4, 0.3);
-    this.core.setStrokeStyle(1, 0x06b6d4, 0.6);
+    this.core = scene.add.ellipse(0, 0, 40, 40, 0x555555, 0.3);
+    this.core.setStrokeStyle(1, 0x555555, 0.6);
     this.add(this.core);
 
     // 标签
     this.label = scene.add.text(0, -55, def.label || '合成器', {
       fontSize: '12px',
-      color: '#06b6d4',
+      color: '#555555',
       fontFamily: 'sans-serif',
       align: 'center',
     });
@@ -82,7 +83,7 @@ export class BlenderNode extends Phaser.GameObjects.Container {
           this.y + portDef.position.y,
           14,
           14,
-          portDef.direction === 'input' ? 0x06b6d4 : 0x10b981,
+          portDef.direction === 'input' ? 0x555555 : 0x10b981,
           0.7
         ),
       };

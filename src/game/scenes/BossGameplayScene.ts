@@ -37,11 +37,11 @@ export class BossGameplayScene extends GameplayScene {
 
     const { width } = this.scale;
     this.add.text(width / 2, 56, '★ 声音大师试炼 ★', {
-      fontSize: '18px', color: '#e64980', fontFamily: 'sans-serif',
+      fontSize: '18px', color: '#444444', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
     this.statusText = this.add.text(width / 2, 82, '点击一颗水晶开始', {
-      fontSize: '14px', color: '#c9a96e', fontFamily: 'sans-serif',
+      fontSize: '14px', color: '#444444', fontFamily: 'sans-serif',
     }).setOrigin(0.5);
 
     this.createCrystalLights();
@@ -55,7 +55,7 @@ export class BossGameplayScene extends GameplayScene {
     for (const obj of this.gameObjects) {
       if (obj instanceof Resonator && obj.isCrystal && obj.phoneme) {
         const gfx = this.add.graphics();
-        gfx.fillStyle(0x444466, 0.2);
+        gfx.fillStyle(0x1a1a1a, 0.2);
         gfx.fillCircle(obj.x, obj.y, 40);
         this.crystalLights.set(obj.phoneme, gfx);
       }
@@ -74,11 +74,11 @@ export class BossGameplayScene extends GameplayScene {
 
   private onCrystalClick(phoneme: string, objectId: string) {
     if (this.completedPhonemes.includes(phoneme)) {
-      this.showStatus(`/${phoneme}/水晶已激活 ✓ 试试下一颗`, '#10b981');
+      this.showStatus(`/${phoneme}/水晶已激活 ✓ 试试下一颗`, '#0a5c3f');
       return;
     }
     this.currentTarget = phoneme;
-    this.showStatus(`🎤 请对着麦克风说 /${phoneme}/ ...`, '#e64980');
+    this.showStatus(`🎤 请对着麦克风说 /${phoneme}/ ...`, '#444444');
     this.mic?.start().then(() => {
       this.mic!.startListening((freq, time) => {
         const result = this.analyzer!.analyze(freq, time);
@@ -87,7 +87,7 @@ export class BossGameplayScene extends GameplayScene {
         }
       });
     }).catch(() => {
-      this.showStatus('麦克风启动失败！请允许浏览器使用麦克风权限', '#ef4444');
+      this.showStatus('麦克风启动失败！请允许浏览器使用麦克风权限', '#7a1a1a');
     });
   }
 
@@ -108,7 +108,7 @@ export class BossGameplayScene extends GameplayScene {
     // resonator.activate() already emits PHONEME_DETECTED — don't double-emit
 
     if (this.completedPhonemes.length >= this.requiredPhonemes.length) {
-      this.showStatus('✨ 全部水晶激活！你是真正的音素大师！', '#10b981');
+      this.showStatus('✨ 全部水晶激活！你是真正的音素大师！', '#0a5c3f');
       this.time.delayedCall(1500, () => {
         eventBus.emit(GameEvents.WIN_CONDITION_MET, {
           levelId: this.levelConfig.levelId, stars: 3, timeSec: 0,
@@ -116,7 +116,7 @@ export class BossGameplayScene extends GameplayScene {
       });
     } else {
       const remaining = this.requiredPhonemes.filter((p) => !this.completedPhonemes.includes(p));
-      this.showStatus(`成功！还剩 ${remaining.length} 颗水晶`, '#10b981');
+      this.showStatus(`成功！还剩 ${remaining.length} 颗水晶`, '#0a5c3f');
     }
   }
 
@@ -124,7 +124,7 @@ export class BossGameplayScene extends GameplayScene {
     const light = this.crystalLights.get(phoneme);
     if (light) {
       light.clear();
-      light.fillStyle(0x10b981, 0.5);
+      light.fillStyle(0x0a5c3f, 0.6);
       const resonator = this.gameObjects.find(
         (o) => o instanceof Resonator && o.phoneme === phoneme
       ) as Resonator | undefined;

@@ -34,24 +34,24 @@ export class ConnectionWire {
   private draw() {
     this.graphics.clear();
     // Glow
-    this.graphics.lineStyle(4, 0x00e5ff, 0.12);
+    this.graphics.lineStyle(4, 0x555555, 0.12);
     const pts = this.getCurvePoints(30);
     for (let i = 0; i < pts.length - 1; i++) this.graphics.lineBetween(pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y);
 
     // Main trace
-    this.graphics.lineStyle(1.5, 0x00e5ff, 0.65);
+    this.graphics.lineStyle(1.5, 0x555555, 0.65);
     const pts2 = this.getCurvePoints(60);
     for (let i = 0; i < pts2.length - 1; i++) this.graphics.lineBetween(pts2[i].x, pts2[i].y, pts2[i+1].x, pts2[i+1].y);
 
     // Port dots
-    this.graphics.fillStyle(0x00e5ff, 0.9);
+    this.graphics.fillStyle(0x555555, 0.9);
     this.graphics.fillCircle(this.startX, this.startY, 4);
-    this.graphics.lineStyle(1, 0xffffff, 0.4);
+    this.graphics.lineStyle(1, 0x1a1a1a, 0.4);
     this.graphics.strokeCircle(this.startX, this.startY, 4);
 
-    this.graphics.fillStyle(0x00e5ff, 0.9);
+    this.graphics.fillStyle(0x555555, 0.9);
     this.graphics.fillCircle(this.endX, this.endY, 4);
-    this.graphics.lineStyle(1, 0xffffff, 0.4);
+    this.graphics.lineStyle(1, 0x1a1a1a, 0.4);
     this.graphics.strokeCircle(this.endX, this.endY, 4);
   }
 
@@ -60,12 +60,12 @@ export class ConnectionWire {
     const pts = this.getCurvePoints(100);
     const idx = Math.floor(this.flowT * (pts.length - 1));
     if (idx < pts.length) {
-      this.flowDots.fillStyle(0xffffff, 0.7);
+      this.flowDots.fillStyle(0x1a1a1a, 0.7);
       this.flowDots.fillCircle(pts[idx].x, pts[idx].y, 2.5);
       // Trail
       for (let i = Math.max(0, idx - 5); i < idx; i++) {
         const a = 0.7 * (1 - (idx - i) / 6);
-        this.flowDots.fillStyle(0x00e5ff, a);
+        this.flowDots.fillStyle(0x555555, a);
         this.flowDots.fillCircle(pts[i].x, pts[i].y, 1.5);
       }
     }

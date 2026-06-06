@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state';
 import { ERAS } from '@/lib/constants';
+import { useCloudTransition } from '@/components/CloudProvider';
 
 const REGIONS = [
   { eraNum:1, x:20, y:55, color:'#d4912a', bg:'#fef6e8', icon:'🔊', name:'Sound World', desc:'捕捉纯粹的声音碎片' },
@@ -16,10 +17,11 @@ const REGIONS = [
 
 export default function EraSelectPage() {
   const r = useRouter(); const { unlockedEras, completedLevels, isAdmin, setScreen } = useGameStore();
-  const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); r.push(`/level-select?era=${n}`); };
+  const cloudNav = useCloudTransition();
+  const click = (n:number) => { if(!isAdmin&&!unlockedEras.includes(n))return; setScreen('level-select'); cloudNav(() => r.push(`/level-select?era=${n}`)); };
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden paper-texture" style={{ background: 'linear-gradient(180deg, #fdf8f0 0%, #f8f1e3 30%, #f3e8d4 70%, #efe0c8 100%)' }}>
+    <div className="relative flex flex-col h-full overflow-hidden">
 
       {/* Map terrain — SVG decorative layer */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -48,22 +50,22 @@ export default function EraSelectPage() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="font-display text-base font-bold text-[#2c2416]">管理员</span>
-          <span className="text-[10px] bg-[#6b5b8a]/10 text-[#6b5b8a] px-2 py-0.5 rounded-full font-bold">ADMIN</span>
+          <span className="font-display text-base font-bold text-white/90">管理员</span>
+          <span className="text-[10px] bg-white/10 text-white/70 px-2 py-0.5 rounded-full font-bold">ADMIN</span>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={()=>{r.push('/journal');}} className="text-xs text-[#5c4f3a]/60 hover:text-[#2c2416] transition-colors font-medium flex items-center gap-1">
+          <button onClick={()=>cloudNav(()=>{r.push('/journal');})} className="text-xs text-white/60 hover:text-white transition-colors font-medium flex items-center gap-1">
             <span>📖</span> 图鉴
           </button>
-          <button onClick={()=>{setScreen('splash');r.push('/');}} className="text-xs text-[#5c4f3a]/50 hover:text-[#2c2416] transition-colors">离开</button>
+          <button onClick={()=>cloudNav(()=>{setScreen('splash');r.push('/');})} className="text-xs text-white/50 hover:text-white transition-colors">离开</button>
         </div>
       </div>
 
       {/* Map title */}
       <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 text-center">
-        <h1 className="font-display text-3xl font-bold text-[#2c2416] tracking-wide">声音大陆</h1>
-        <div className="w-10 h-px bg-[#d4912a]/40 mx-auto mt-2 mb-1.5" />
-        <p className="text-[11px] text-[#9b8c78] italic">The Phonic Lands</p>
+        <h1 className="font-display text-3xl font-bold text-white/95 tracking-wide">声音大陆</h1>
+        <div className="w-10 h-px bg-[#d4912a]/60 mx-auto mt-2 mb-1.5" />
+        <p className="text-[11px] text-white/50 italic">The Phonic Lands</p>
       </div>
 
       {/* Region markers */}
@@ -100,16 +102,16 @@ export default function EraSelectPage() {
             </div>
             {/* Label */}
             <div className="mt-2.5 text-center">
-              <p className={`font-display text-sm font-bold tracking-wide transition-colors duration-500 ${unlocked ? 'text-[#2c2416]' : 'text-[#9b8c78]'}`}>
+              <p className={`font-display text-sm font-bold tracking-wide transition-colors duration-500 ${unlocked ? 'text-white/90' : 'text-white/40'}`}>
                 {unlocked ? era.name : '???'}
               </p>
-              <p className={`text-[10px] tracking-wider transition-colors duration-500 ${unlocked ? 'text-[#5c4f3a]' : 'text-[#c4b89a]'}`}>
+              <p className={`text-[10px] tracking-wider transition-colors duration-500 ${unlocked ? 'text-white/60' : 'text-white/30'}`}>
                 {reg.desc}
               </p>
               {unlocked ? (
-                <span className="inline-block mt-1 text-[10px] font-mono text-[#9b8c78]">{completed}/{era.totalLevels}</span>
+                <span className="inline-block mt-1 text-[10px] font-mono text-white/50">{completed}/{era.totalLevels}</span>
               ) : (
-                <span className="inline-block mt-1 text-[10px] text-[#c4b89a]">废墟 · 待发掘</span>
+                <span className="inline-block mt-1 text-[10px] text-white/30">废墟 · 待发掘</span>
               )}
             </div>
           </button>
@@ -118,7 +120,7 @@ export default function EraSelectPage() {
 
       {/* Bottom hint */}
       <div className="absolute bottom-5 left-0 right-0 text-center z-20">
-        <p className="text-[10px] text-[#9b8c78]/60 italic">点击探索区域 · 收集声音碎片 · 重建失落文明</p>
+        <p className="text-[10px] text-white/30 italic">点击探索区域 · 收集声音碎片 · 重建失落文明</p>
       </div>
     </div>
   );

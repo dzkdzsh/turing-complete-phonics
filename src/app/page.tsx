@@ -2,9 +2,10 @@
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state';
 import { useEffect, useState } from 'react';
+import { useCloudTransition } from '@/components/CloudProvider';
 
 export default function Home() {
-  const r = useRouter(); const { setScreen } = useGameStore();
+  const r = useRouter(); const { setScreen } = useGameStore(); const cloudNav = useCloudTransition();
   const [v, setV] = useState(false);
   useEffect(() => { requestAnimationFrame(() => setV(true)); }, []);
 
@@ -22,8 +23,8 @@ export default function Home() {
       <nav className="relative z-20 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
         <span className="font-display text-3xl tracking-tight text-[#d4912a]">图灵拼读<span className="text-xs align-super text-[#9b8c78]">®</span></span>
         <div className="flex items-center gap-8">
-          <button onClick={()=>r.push('/journal')} className="text-sm text-[#9b8c78] hover:text-[#d4912a] transition-colors">图鉴</button>
-          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+          <button onClick={()=>cloudNav(()=>r.push('/journal'))} className="text-sm text-[#9b8c78] hover:text-[#d4912a] transition-colors">图鉴</button>
+          <button onClick={()=>cloudNav(()=>{setScreen('era-map');r.push('/era-select');})}
             className="rounded-full px-6 py-2.5 text-sm bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
             开始探索
           </button>
@@ -34,20 +35,20 @@ export default function Home() {
       <div className="relative z-20 flex flex-col items-center justify-center text-center px-6" style={{paddingTop:'calc(14rem)',paddingBottom:'12rem'}}>
         <h1 className={`font-display text-5xl sm:text-7xl md:text-8xl max-w-4xl font-normal transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0':'opacity-0 translate-y-6'}`}
           style={{lineHeight:0.95,letterSpacing:'-2px',color:'#e8e0d0'}}>
-          在<span className="italic text-[#9b8c78]">声音的废墟</span>之上，<br/>我们重建<span className="italic text-[#9b8c78]">语言。</span>
+          从<span className="text-[#f59e0b]">音素碎片</span>到<span className="text-[#f59e0b]">语言文明</span>，<br/>重建失落的知识大陆
         </h1>
 
         <p className={`text-base sm:text-lg max-w-2xl mt-8 leading-relaxed transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0 delay-[200ms]':'opacity-0 translate-y-5'}`}
-          style={{color:'#9b8c78'}}>
-          从最基础的音素碎片开始，一步步重建整个英语发音系统。<br/>如同考古学家在废墟中复原失落的语言文明。
+          style={{color:'#2c2416'}}>
+          英语拼读 · 单词记忆 · 中考语文 · 中考历史<br/>8个时代 · 30个关卡 · 一座等待探索的语言遗迹
         </p>
 
         <div className={`flex gap-4 mt-12 transition-all duration-[1s] ease-out ${v?'opacity-100 translate-y-0 delay-[400ms]':'opacity-0 translate-y-5'}`}>
-          <button onClick={()=>{setScreen('era-map');r.push('/era-select');}}
+          <button onClick={()=>cloudNav(()=>{setScreen('era-map');r.push('/era-select');})}
             className="rounded-full px-10 py-5 text-base bg-[#d4912a] text-[#0f0d0a] font-bold hover:scale-[1.03] transition-transform">
             开始探索
           </button>
-          <button onClick={()=>r.push('/challenge')}
+          <button onClick={()=>cloudNav(()=>r.push('/challenge'))}
             className="rounded-full px-10 py-5 text-base bg-white/10 text-[#e8e0d0] font-bold border border-white/15 hover:bg-white/20 hover:scale-[1.03] transition-all">
             ⚡ 课堂挑战
           </button>

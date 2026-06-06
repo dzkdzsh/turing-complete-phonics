@@ -66,7 +66,7 @@ export default function RiddlePage() {
   const restart = () => { setIdx(0); setScore(0); setInput(''); setShowHint(false); setShowAnswer(false); setFeedback(''); setGameOver(false); setRiddles(RIDDLES.sort(()=>Math.random()-0.5)); inputRef.current?.focus(); };
 
   return (
-    <div className="min-h-screen flex flex-col items-center" style={{background:'#0f0d0a'}}>
+    <div className="min-h-screen flex flex-col items-center">
       <div className="w-full max-w-2xl px-6 pt-6">
         <button onClick={()=>r.push('/challenge')} className="text-xs text-[#5c554c] hover:text-[#9b8c78] mb-4">← 返回</button>
         <div className="flex items-center justify-between mb-6">

@@ -1,3 +1,4 @@
+import { randomDarkFill } from './DarkFills';
 // AlphabetTile —— Era 3 字母块：初始空白，音素水晶拖入后显示对应字母
 
 import * as Phaser from 'phaser';
@@ -33,19 +34,19 @@ export class AlphabetTile extends Phaser.GameObjects.Container {
 
     // 微光效果
     this.shimmer = scene.add.graphics();
-    this.shimmer.lineStyle(1, 0x8b5cf6, 0.3);
+    this.shimmer.lineStyle(1, 0x555555, 0.3);
     this.shimmer.strokeRect(-40, -35, 80, 70);
     this.add(this.shimmer);
 
     // 石板背景
-    this.bg = scene.add.rectangle(0, 0, 70, 60, 0x2a2520, 0.9);
-    this.bg.setStrokeStyle(2, 0x8b5cf6, 0.4);
+    this.bg = scene.add.rectangle(0, 0, 70, 60, randomDarkFill(), 0.9);
+    this.bg.setStrokeStyle(2, 0x555555, 0.4);
     this.add(this.bg);
 
     // 字母（初始隐藏）
     this.letterText = scene.add.text(0, 0, '?', {
       fontSize: '28px',
-      color: '#8b5cf6',
+      color: '#555555',
       fontFamily: 'monospace',
       fontStyle: 'bold',
     });
@@ -56,7 +57,7 @@ export class AlphabetTile extends Phaser.GameObjects.Container {
     // 标签
     const label = scene.add.text(0, 42, def.label || '', {
       fontSize: '10px',
-      color: '#8b7355',
+      color: '#000000',
       fontFamily: 'sans-serif',
       align: 'center',
     });

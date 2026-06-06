@@ -49,12 +49,12 @@ export const ERAS = {
 
 // 音素对应颜色
 export const PHONEME_COLORS: Record<string, number> = {
-  m: 0xF59E0B,   // 暖橙
-  s: 0x06B6D4,   // 冷青
-  a: 0x10B981,   // 柔绿
-  k: 0xD97706,   // 琥珀
-  ae: 0xEC4899,  // 粉
-  t: 0x8B5CF6,   // 紫
+  m: 0x555555,   // dark gray
+  s: 0x444444,   // dark gray
+  a: 0x333333,   // dark gray
+  k: 0x444444,   // dark gray
+  ae: 0x333333,  // dark gray
+  t: 0x555555,   // dark gray
 };
 
 // Phaser 场景键名

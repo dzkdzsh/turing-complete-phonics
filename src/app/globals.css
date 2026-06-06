@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Cloud iris transition — animatable custom property */
+@property --iris {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 45%;
+}
+
+/* Circular cloud iris transition */
+.cloud-iris {
+  mask-image: radial-gradient(circle at center, transparent var(--iris), rgba(0,0,0,0.5) calc(var(--iris) + 3%), black calc(var(--iris) + 8%));
+  -webkit-mask-image: radial-gradient(circle at center, transparent var(--iris), rgba(0,0,0,0.5) calc(var(--iris) + 3%), black calc(var(--iris) + 8%));
+  transition: --iris 1.5s cubic-bezier(0.4,0,0.2,1);
+}
+
 :root {
   --paper: #fdf8f0;
   --paper-dark: #f5ede0;
@@ -28,7 +42,7 @@
 
 html, body {
   margin: 0; padding: 0; overflow: hidden; height: 100%;
-  background: #0f0d0a;
+  background: transparent;
   color: var(--ink);
   font-family: 'Inter', -apple-system, sans-serif;
   font-feature-settings: 'cv02','cv03','cv04';
@@ -43,7 +57,7 @@ html, body {
 ::-webkit-scrollbar-thumb { background: var(--ink-muted); border-radius: 3px; }
 
 .no-select { user-select: none; -webkit-user-select: none; }
-.game-container canvas { display: block; }
+.game-container canvas { display: block; background: transparent !important; }
 
 /* ---- Parchment texture ---- */
 .paper-texture {

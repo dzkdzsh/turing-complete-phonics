@@ -1,6 +1,7 @@
 'use client';
 import { Suspense } from 'react'; import { useRouter, useSearchParams } from 'next/navigation';
 import { useGameStore } from '@/lib/game-state'; import { ERAS } from '@/lib/constants';
+import { useCloudTransition } from '@/components/CloudProvider';
 
 const L:Record<number,{id:string;title:string;boss:boolean}[]>={
   1:[{id:'001-discover-m',title:'发现 /m/',boss:false},{id:'002-discover-s',title:'发现 /s/',boss:false},{id:'003-sound-match',title:'回声匹配',boss:false},{id:'004-sound-lab',title:'声音实验室',boss:false},{id:'005-boss-sounds',title:'共振试炼',boss:true}],
@@ -14,7 +15,7 @@ const L:Record<number,{id:string;title:string;boss:boolean}[]>={
 };
 
 function C(){
-  const r=useRouter();const sp=useSearchParams();const n=Number(sp.get('era'))||1;
+  const r=useRouter();const sp=useSearchParams();const n=Number(sp.get('era'))||1;const cloudNav=useCloudTransition();
   const{isAdmin,unlockedLevels,completedLevels,levelStars,setCurrentLevel,setScreen}=useGameStore();
   const era=ERAS[n as keyof typeof ERAS];const lvs=L[n]||[];
 
@@ -25,32 +26,32 @@ function C(){
   const color = n===1?'#d4912a':n===2?'#2d8a7b':'#6b5b8a';
 
   return (
-    <div className="flex flex-col items-center min-h-full p-6 overflow-auto paper-texture" style={{ background: 'linear-gradient(180deg, #fdf8f0 0%, #f5ede0 50%, #efe5d2 100%)' }}>
+    <div className="flex flex-col items-center min-h-full p-6 overflow-auto relative">
       {/* Top bar */}
-      <div className="w-full max-w-2xl flex items-center justify-between mb-8 animate-in">
-        <button onClick={()=>{setScreen('era-map');r.push('/era-select');}} className="flex items-center gap-1.5 text-sm text-[#5c4f3a] hover:text-[#2c2416] transition-colors font-medium">
+      <div className="w-full max-w-2xl flex items-center justify-between mb-8 animate-in relative z-10">
+        <button onClick={()=>cloudNav(()=>{setScreen('era-map');r.push('/era-select');})} className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors font-medium">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           返回地图
         </button>
-        <span className="text-xs text-[#9b8c78] font-medium">管理员</span>
+        <span className="text-xs text-white/50 font-medium">管理员</span>
       </div>
 
       {/* Era header */}
-      <div className="text-center mb-10 animate-in anim-d1">
+      <div className="text-center mb-10 animate-in anim-d1 relative z-10">
         <div className="w-3 h-3 rounded-full mx-auto mb-4" style={{ backgroundColor:color, boxShadow:`0 0 14px ${color}30` }} />
-        <h2 className="font-display text-2xl font-bold text-[#2c2416] mb-1.5">{era?.name}</h2>
-        <p className="text-sm text-[#5c4f3a]/70 max-w-sm leading-relaxed">{era?.description}</p>
+        <h2 className="font-display text-2xl font-bold text-white/95 mb-1.5">{era?.name}</h2>
+        <p className="text-sm text-white/60 max-w-sm leading-relaxed">{era?.description}</p>
       </div>
 
       {/* Level cards — specimen collection grid */}
-      <div className="flex gap-4 flex-wrap justify-center max-w-2xl">
+      <div className="flex gap-4 flex-wrap justify-center max-w-2xl relative z-10">
         {lvs.map((lv,i)=>(
           <button key={lv.id} onClick={()=>go(lv.id,lv.boss)} disabled={!unl(lv.id)}
-            className={`relative w-[11rem] p-5 rounded-2xl text-left transition-all duration-300 animate-in ${unl(lv.id)?'card-specimen cursor-pointer':'bg-white/30 opacity-40 cursor-not-allowed rounded-2xl'}`}
+            className={`relative w-[11rem] p-5 rounded-2xl text-left transition-all duration-300 animate-in ${unl(lv.id)?'bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/20 cursor-pointer':'bg-white/5 opacity-40 cursor-not-allowed rounded-2xl'}`}
             style={{animationDelay:`${0.1+i*0.06}s`}}>
             {/* Pin / number */}
             <div className="flex items-start justify-between mb-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold ${comp(lv.id)?'bg-[#4a8c5c]/10 text-[#4a8c5c]':unl(lv.id)?'text-[#2c2416] bg-[#2c2416]/[0.03]':'text-[#c4b89a] bg-[#c4b89a]/20'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold ${comp(lv.id)?'bg-[#4a8c5c]/20 text-[#4a8c5c]':unl(lv.id)?'text-white/80 bg-white/10':'text-white/30 bg-white/5'}`}>
                 {String(i+1).padStart(2,'0')}
               </div>
               <div className="flex items-center gap-1">
@@ -59,13 +60,13 @@ function C(){
             </div>
 
             {/* Title */}
-            <p className={`text-sm font-semibold leading-snug mb-3 ${unl(lv.id)?'text-[#2c2416]':'text-[#9b8c78]'}`}>{lv.title}</p>
+            <p className={`text-sm font-semibold leading-snug mb-3 ${unl(lv.id)?'text-white/90':'text-white/40'}`}>{lv.title}</p>
 
             {/* Status */}
             {comp(lv.id) ? (
               <div className="flex gap-1.5">
                 {[1,2,3].map(s=>(
-                  <svg key={s} width="14" height="14" viewBox="0 0 16 16" className={s<=st(lv.id)?'text-[#d4912a]':'text-[#e0d6c4]'}>
+                  <svg key={s} width="14" height="14" viewBox="0 0 16 16" className={s<=st(lv.id)?'text-[#d4912a]':'text-white/15'}>
                     <path d="M8 1l2 4.5L15 6l-3.5 3L12.5 15 8 12.5 3.5 15 5 9 1.5 6 6 5.5z" fill="currentColor"/>
                   </svg>
                 ))}
@@ -73,7 +74,7 @@ function C(){
             ) : unl(lv.id) ? (
               <span className="text-[10px] text-[#2d8a7b] font-medium tracking-wide">▸ 进入</span>
             ) : (
-              <span className="text-[10px] text-[#c4b89a]">🔒</span>
+              <span className="text-[10px] text-white/20">🔒</span>
             )}
           </button>
         ))}

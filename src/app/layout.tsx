@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { CloudProvider } from '@/components/CloudProvider';
 
 export const metadata: Metadata = {
   title: '图灵拼读 — Turing Complete for Phonics',
@@ -22,7 +23,7 @@ export default function RootLayout({
       </head>
       <body className="h-full flex flex-col no-select">
         <script dangerouslySetInnerHTML={{__html:`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`}} />
-        {children}
+        <CloudProvider>{children}</CloudProvider>
       </body>
     </html>
   );
