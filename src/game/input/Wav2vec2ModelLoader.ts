@@ -1,9 +1,9 @@
 // Wav2vec2ModelLoader —— 懒加载 wav2vec2 ONNX 模型，全局单例
-// 使用 @xenova/transformers 的 pipeline API
+// 使用 @xenova/transformers 的 pipeline API（动态 import，浏览器端按需加载）
 // 模型 ~95MB，首次下载后缓存至浏览器 IndexedDB
 
-import { pipeline } from '@xenova/transformers';
-import type { Pipeline } from '@xenova/transformers';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Pipeline = any;
 
 export class Wav2vec2ModelLoader {
   private static instance: Wav2vec2ModelLoader;
@@ -31,7 +31,6 @@ export class Wav2vec2ModelLoader {
     if (this._isLoaded) return;
 
     if (this._isLoading) {
-      // 等待正在进行的加载
       return new Promise((resolve, reject) => {
         const check = setInterval(() => {
           if (this._isLoaded) { clearInterval(check); resolve(); }
@@ -44,12 +43,15 @@ export class Wav2vec2ModelLoader {
     this._loadError = null;
 
     try {
+      // 动态 import —— 仅在浏览器端按需加载，避免 SSR / Turbopack 打包问题
+      const { pipeline } = await import('@xenova/transformers');
       this._pipeline = await pipeline(
         'automatic-speech-recognition',
         'Xenova/wav2vec2-base-960h',
         {
-          progress_callback: (info: { status: string; progress?: number }) => {
-            if (info.status === 'progress' && info.progress) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          progress_callback: (info: any) => {
+            if (info.status === 'progress' && typeof info.progress === 'number') {
               this._loadProgress = info.progress / 100;
               onProgress?.(this._loadProgress);
             }
