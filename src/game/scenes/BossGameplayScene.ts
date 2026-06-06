@@ -21,8 +21,8 @@ export class BossGameplayScene extends GameplayScene {
   private statusText: Phaser.GameObjects.Text | null = null;
   private crystalLights: Map<string, Phaser.GameObjects.Graphics> = new Map();
 
-  // Recording state
-  private freqFrames: Uint8Array[] = [];
+  // Recording state — collect raw PCM for FFT analysis
+  private timeChunks: Float32Array[] = [];
   private isRecording = false;
   private recordingStartTime = 0;
 
@@ -100,12 +100,12 @@ export class BossGameplayScene extends GameplayScene {
       await this.mic!.start();
       this.isRecording = true;
       this.recordingStartTime = Date.now();
-      this.freqFrames = [];
+      this.timeChunks = [];
 
-      // Use MicrophoneInput's proven data pipeline
-      this.mic!.startListening((freqData) => {
+      // Collect raw PCM (time domain) for FFT — same as working test page
+      this.mic!.startListening((_freqData, timeData) => {
         if (!this.isRecording) return;
-        this.freqFrames.push(new Uint8Array(freqData));
+        this.timeChunks.push(new Float32Array(timeData));
       });
 
       this.showStopButton();
@@ -126,21 +126,32 @@ export class BossGameplayScene extends GameplayScene {
 
   private async processRecording() {
     const target = this.currentTarget;
-    if (!target) return;
+    if (!target || !this.analyzer) return;
+
+    // Combine time chunks
+    const totalLen = this.timeChunks.reduce((s, c) => s + c.length, 0);
+    if (totalLen < 2048) {
+      this.showStatus('❌ 录音太短，请点击水晶重试', '#ef4444');
+      this.timeChunks = [];
+      return;
+    }
+
+    const raw = new Float32Array(totalLen);
+    let off = 0;
+    for (const c of this.timeChunks) { raw.set(c, off); off += c.length; }
 
     // Recognition phase
     this.showStatus('🔍 正在识别中...', '#f59e0b');
     this.showRecognizingAnimation();
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 400));
 
-    const result = this.freqFrames.length >= 5 && this.analyzer
-      ? this.analyzer.analyzeFreqFrames(this.freqFrames, 44100, 2048)
-      : null;
+    // Use the exact same algorithm as the working test page
+    const result = this.analyzer.analyze(raw, 44100);
 
     this.hideRecognizingAnimation();
 
-    console.log('[Boss] target=/' + target + '/ best=/' + (result?.phoneme || '?') +
-      '/ conf=' + ((result?.confidence || 0) * 100).toFixed(0) + '% frames=' + this.freqFrames.length);
+    console.log('[Boss] target=/' + target + '/ result=/' + (result?.phoneme || '?') +
+      '/ conf=' + ((result?.confidence || 0) * 100).toFixed(0) + '% samples=' + totalLen);
 
     if (!result || result.confidence < 0.15) {
       this.showStatus('❌ 没有检测到清晰的声音，点击水晶重试', '#ef4444');
@@ -155,7 +166,7 @@ export class BossGameplayScene extends GameplayScene {
       this.showStatus('❌ 不太确定，请再大声/清晰一点', '#f59e0b');
     }
 
-    this.freqFrames = [];
+    this.timeChunks = [];
   }
 
   // ─── Recording UI ───
