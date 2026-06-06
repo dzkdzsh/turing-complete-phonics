@@ -23,6 +23,7 @@ export class BossGameplayScene extends GameplayScene {
   private mediaRecorder: MediaRecorder | null = null;
   private audioCtx: AudioContext | null = null;
   private analyserNode: AnalyserNode | null = null;
+  private audioSampleRate = 44100;
   private freqFrames: Uint8Array[] = [];
   private recordedChunks: Blob[] = [];
   private isRecording = false;
@@ -104,6 +105,8 @@ export class BossGameplayScene extends GameplayScene {
 
       // AudioContext for AnalyserNode (spectral data)
       this.audioCtx = new AudioContext();
+      await this.audioCtx.resume(); // required: browsers suspend AudioContext until user gesture
+      this.audioSampleRate = this.audioCtx.sampleRate;
       this.analyserNode = this.audioCtx.createAnalyser();
       this.analyserNode.fftSize = 2048;
       this.analyserNode.smoothingTimeConstant = 0;
@@ -115,8 +118,9 @@ export class BossGameplayScene extends GameplayScene {
       this.recordedChunks = [];
       this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedChunks.push(e.data); };
 
-      // Collect frequency frames
+      // Collect frequency frames (wait 200ms for audio to start flowing)
       this.freqFrames = [];
+      const sampleRate = this.audioCtx.sampleRate;
       const collectFrame = () => {
         if (!this.isRecording || !this.analyserNode) return;
         const data = new Uint8Array(this.analyserNode.frequencyBinCount);
@@ -128,7 +132,8 @@ export class BossGameplayScene extends GameplayScene {
       this.mediaRecorder.start();
       this.isRecording = true;
       this.recordingStartTime = Date.now();
-      collectFrame();
+      // Delay frame collection to avoid initial noise burst
+      setTimeout(() => { if (this.isRecording) collectFrame(); }, 200);
 
       // Show stop button + timer
       this.showStopButton();
@@ -187,7 +192,7 @@ export class BossGameplayScene extends GameplayScene {
 
     // Analyze collected frequency frames
     const result = this.freqFrames.length >= 5 && this.analyzer
-      ? this.analyzer.analyzeFreqFrames(this.freqFrames, 44100, 2048)
+      ? this.analyzer.analyzeFreqFrames(this.freqFrames, this.audioSampleRate, 2048)
       : null;
 
     this.hideRecognizingAnimation();
