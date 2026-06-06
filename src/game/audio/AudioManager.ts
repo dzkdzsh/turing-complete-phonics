@@ -96,24 +96,42 @@ export class AudioManager {
     import('./PhonemeSynth').then(m => m.phonemeSynth.play(phoneme)).catch(() => {});
   }
 
-  /** 裁剪音频首尾静音，返回 { data, sampleRate } */
-  private trimSilence(buf: AudioBuffer, threshold = 0.02): Float32Array {
+  /** 裁剪音频首尾静音 */
+  private trimSilence(buf: AudioBuffer, threshold = 0.008): Float32Array {
     const data = buf.getChannelData(0);
+
+    // Use RMS in 10ms windows for more robust silence detection
+    const winSamples = Math.ceil(0.01 * buf.sampleRate); // 10ms window
     let start = 0;
-    let end = data.length - 1;
+    let end = Math.floor(data.length / winSamples) - 1;
 
-    // Find first sample above threshold
-    while (start < data.length && Math.abs(data[start]) < threshold) start++;
-    // Find last sample above threshold
-    while (end > start && Math.abs(data[end]) < threshold) end--;
+    // Find first non-silent window
+    for (let w = 0; w < end; w++) {
+      let rms = 0;
+      const off = w * winSamples;
+      for (let i = 0; i < winSamples && off + i < data.length; i++) {
+        rms += data[off + i] * data[off + i];
+      }
+      rms = Math.sqrt(rms / winSamples);
+      if (rms > threshold) { start = w; break; }
+    }
 
-    // Keep a tiny buffer (5ms) of silence before/after for natural sound
-    const padSamples = Math.ceil(0.005 * buf.sampleRate);
-    start = Math.max(0, start - padSamples);
-    end = Math.min(data.length - 1, end + padSamples);
+    // Find last non-silent window
+    for (let w = end; w > start; w--) {
+      let rms = 0;
+      const off = w * winSamples;
+      for (let i = 0; i < winSamples && off + i < data.length; i++) {
+        rms += data[off + i] * data[off + i];
+      }
+      rms = Math.sqrt(rms / winSamples);
+      if (rms > threshold) { end = w; break; }
+    }
 
-    if (end <= start) return data; // no silence to trim
-    return data.subarray(start, end + 1);
+    const startSample = Math.max(0, start * winSamples);
+    const endSample = Math.min(data.length - 1, (end + 1) * winSamples);
+
+    if (endSample <= startSample) return data;
+    return data.subarray(startSample, endSample + 1);
   }
 
   /** 合成音素：将多个音素音频缓冲区交叉淡入淡出拼接 */
@@ -143,7 +161,7 @@ export class AudioManager {
     }
 
     // Calculate total duration with crossfades (using trimmed lengths)
-    const crossfadeSec = 0.03; // 30ms crossfade
+    const crossfadeSec = 0.015; // 15ms crossfade
     const outSampleRate = ctx.sampleRate;
 
     // Resample all to output sample rate, calculate lengths
