@@ -159,19 +159,10 @@ export class BlenderNode extends Phaser.GameObjects.Container {
       });
       this.bgRect.setStrokeStyle(2, 0x10b981, 0.8);
 
-      // 合成音：用交叉淡入淡出拼接所有音素
+      // 播放预录合成音
       const phonemes = inputPorts.map((p) => p.connectedPhoneme!);
       const blendId = phonemes.join('');
-      const audio = AudioManager.getInstance();
-      const blended = audio.blendPhonemes(phonemes);
-      if (blended) {
-        audio.playBuffer(blended);
-      } else {
-        // 回退：顺序播放
-        phonemes.forEach((p, i) => {
-          setTimeout(() => audio.playPhoneme(p), i * 150);
-        });
-      }
+      AudioManager.getInstance().playBlend(blendId);
 
       this.outputLabel.setText(blendId);
       this.outputLabel.setColor('#10b981');
