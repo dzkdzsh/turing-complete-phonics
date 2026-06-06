@@ -44,8 +44,16 @@ export class Wav2vec2ModelLoader {
 
   get pipeline(): Pipeline | null { return this._pipeline; }
   get isLoaded(): boolean { return this._isLoaded; }
+  get isLoading(): boolean { return this._isLoading; }
   get loadProgress(): number { return this._loadProgress; }
   get loadError(): string | null { return this._loadError; }
+
+  /** 取消加载，回退到 FFT 模式 */
+  cancel(): void {
+    this._loadError = 'User cancelled';
+    this._isLoading = false;
+    this._loadProgress = 0;
+  }
 
   /** 幂等加载：等待 CDN 脚本就绪 → 创建 pipeline → 下载模型 */
   async ensureLoaded(onProgress?: (pct: number) => void): Promise<void> {

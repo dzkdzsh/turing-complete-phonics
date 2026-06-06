@@ -62,24 +62,59 @@ export class BossGameplayScene extends GameplayScene {
     this.preloadModel();
   }
 
+  private skipButton: Phaser.GameObjects.Container | null = null;
+
   private async preloadModel() {
+    // 显示跳过按钮
+    const { width } = this.scale;
+    this.showSkipButton(width / 2, 120);
+
     try {
       await this.modelLoader.ensureLoaded((pct: number) => {
         if (this.statusText && pct < 1) {
-          this.statusText.setText(`语音引擎加载中... ${Math.round(pct * 100)}%`);
+          this.statusText.setText(`AI语音引擎加载中... ${Math.round(pct * 100)}%`);
         }
       });
+      this.hideSkipButton();
       this.wav2vec2Analyzer = new Wav2vec2Analyzer(this.modelLoader);
       this.useAI = true;
       if (this.statusText) {
-        this.statusText.setText('准备好了！点击水晶开始试炼');
+        this.statusText.setText('AI引擎就绪！点击水晶开始试炼');
       }
     } catch (err) {
       console.warn('[BossGameplay] wav2vec2 model failed to load, using FFT fallback:', err);
+      this.hideSkipButton();
       this.useAI = false;
       if (this.statusText) {
-        this.statusText.setText('离线模式：点击水晶开始');
+        this.statusText.setText('基础模式：点击水晶开始');
       }
+    }
+  }
+
+  private showSkipButton(x: number, y: number) {
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.3);
+    bg.fillRoundedRect(-80, -16, 160, 32, 16);
+
+    const txt = this.add.text(0, 0, '跳过，用基础模式 →', {
+      fontSize: '13px', color: '#d4912a', fontFamily: 'sans-serif',
+    }).setOrigin(0.5);
+
+    this.skipButton = this.add.container(x, y, [bg, txt]);
+    this.skipButton.setSize(160, 32);
+    this.skipButton.setInteractive({ cursor: 'pointer' });
+    this.skipButton.on('pointerdown', () => {
+      this.modelLoader.cancel();
+      this.hideSkipButton();
+    });
+    this.skipButton.on('pointerover', () => txt.setColor('#f0c46a'));
+    this.skipButton.on('pointerout', () => txt.setColor('#d4912a'));
+  }
+
+  private hideSkipButton() {
+    if (this.skipButton) {
+      this.skipButton.destroy();
+      this.skipButton = null;
     }
   }
 
