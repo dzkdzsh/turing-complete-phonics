@@ -189,7 +189,7 @@ export class AudioManager {
 
     // Truncate each phoneme to a tight core (max 200ms), then overlap heavily
     const MAX_PHONEME_MS = 0.20; // keep only 200ms of each phoneme
-    const OVERLAP_MS = 0.18;      // overlap by 180ms (90% — nearly full blend)
+    const OVERLAP_MS = 0.195;     // overlap by 195ms (97.5% — almost simultaneous)
 
     const maxSamples = Math.ceil(MAX_PHONEME_MS * outSampleRate);
     const overlapSamples = Math.ceil(OVERLAP_MS * outSampleRate);
