@@ -16,7 +16,7 @@
     "requiredPhonemes": ["m", "s", "a"],
     "maxAttempts": 5,
     "timeLimitSec": 300,
-    "micConfidenceThreshold": 0.6
+    "micConfidenceThreshold": 0.4
   },
   "difficulty": 3,
   "estimatedDurationSec": 240,
