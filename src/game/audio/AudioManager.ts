@@ -188,48 +188,45 @@ export class AudioManager {
       return out;
     }
 
-    // Truncate each phoneme to a tight core (max 200ms), then overlap heavily
+    // Truncate each phoneme to a tight core, then overlap 100%
     const MAX_PHONEME_MS = 0.20; // keep only 200ms of each phoneme
-    const OVERLAP_MS = 0.195;     // overlap by 195ms (97.5% — almost simultaneous)
-
     const maxSamples = Math.ceil(MAX_PHONEME_MS * outSampleRate);
-    const overlapSamples = Math.ceil(OVERLAP_MS * outSampleRate);
 
     // Truncate to core
     const cores = resampled.map(d => d.subarray(0, Math.min(d.length, maxSamples)));
 
-    // Calculate output length
-    let totalLen = cores[0].length;
-    for (let i = 1; i < cores.length; i++) {
-      totalLen += cores[i].length - overlapSamples;
-    }
-
-    const outBuffer = ctx.createBuffer(1, totalLen, outSampleRate);
+    // Output = longest core (since 100% overlap)
+    const outLen = cores[0].length; // all same length (200ms)
+    const outBuffer = ctx.createBuffer(1, outLen, outSampleRate);
     const outData = outBuffer.getChannelData(0);
 
-    // Write first phoneme fully
-    for (let s = 0; s < cores[0].length; s++) outData[s] = cores[0][s];
-    let writePos = cores[0].length;
+    // First phoneme: write at full volume then fade out
+    for (let s = 0; s < cores[0].length; s++) {
+      const fadeOut = 1.0 - (s / cores[0].length); // linear fade out over full duration
+      outData[s] = cores[0][s] * fadeOut;
+    }
 
+    // Subsequent phonemes: fade in while previous fades out
     for (let i = 1; i < cores.length; i++) {
       const src = cores[i];
-      // Start writing from (writePos - overlapSamples) — overlapping with previous
-      const start = writePos - overlapSamples;
+      const srcLen = src.length;
 
-      for (let s = 0; s < src.length; s++) {
-        const idx = start + s;
-        if (idx >= totalLen) break;
+      // Phoneme starts from the beginning with fade-in,
+      // reaching full volume when previous fades out
+      const segmentStart = Math.floor((i - 1) * outLen * 0.3); // stagger by 30% for multiple
 
-        if (s < overlapSamples) {
-          // Ease-in-out curve for smoother transition
-          const t = s / overlapSamples;
-          const fade = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          outData[idx] = outData[idx] * (1 - fade) + src[s] * fade;
-        } else {
-          outData[idx] += src[s];
-        }
+      for (let s = 0; s < srcLen; s++) {
+        const idx = segmentStart + s;
+        if (idx >= outLen) break;
+
+        // Ease-in-out fade for this segment
+        const progress = s / srcLen;
+        const fadeIn = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        outData[idx] = outData[idx] * (1 - fadeIn * 0.7) + src[s] * fadeIn;
       }
-      writePos = start + src.length;
     }
 
     return outBuffer;
